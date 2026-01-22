@@ -1,16 +1,12 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../hooks/useStore';
-import { api } from '../services/api';
-import { audioManager } from '../services/audio';
-import { t } from '../i18n/translations';
 
 interface Motorcycle {
   id: number;
   lane: number;
   y: number;
   speed: number;
-  type: 'normal' | 'fast' | 'armored';
-  spriteIndex: number;
+  isFat: boolean;
   hit: boolean;
   exploding: boolean;
   explosionFrame: number;
@@ -48,30 +44,28 @@ const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
 
 const CITY_BACKGROUNDS = [
-  { name: 'Rio de Janeiro', bg: '/assets/bg-rio.png' },
-  { name: 'New York', bg: '/assets/bg-newyork.png' },
-  { name: 'Tokyo', bg: '/assets/bg-tokyo.png' },
-  { name: 'Paris', bg: '/assets/bg-paris.png' },
-  { name: 'Dubai', bg: '/assets/bg-dubai.png' },
-  { name: 'Los Angeles', bg: '/assets/bg-losangeles.png' },
+  { name: 'Rio de Janeiro', bg: '/assets/road-rio.png' },
+  { name: 'New York', bg: '/assets/road-newyork.png' },
+  { name: 'Tokyo', bg: '/assets/road-tokyo.png' },
+  { name: 'Paris', bg: '/assets/road-paris.png' },
+  { name: 'Dubai', bg: '/assets/road-dubai.png' },
+  { name: 'Los Angeles', bg: '/assets/road-losangeles.png' },
 ];
 
-const MOTO_SPRITES = [
-  '/assets/moto-sprite.png',
-  '/assets/moto-sprite-2.png',
-  '/assets/moto-sprite-3.png',
-];
-
-const DOG_SPRITE = '/assets/dog-sprite.png';
+const MOTO_THIN_SPRITE = '/assets/moto-thin.png';
+const MOTO_FAT_SPRITE = '/assets/moto-fat.png';
+const DOG_SPRITE = '/assets/dog-topdown.png';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { language, game, setGameState } = useStore();
+  const { game, setGameState } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [explosions, setExplosions] = useState<Explosion[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [playerLane, setPlayerLane] = useState(2);
+  const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 150);
+  const [facingRight, setFacingRight] = useState(true);
   const [isKicking, setIsKicking] = useState(false);
   const [kickCooldown, setKickCooldown] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -83,12 +77,13 @@ export default function GameCanvas() {
   const scrollOffset = useRef(0);
 
   const dogImageRef = useRef<HTMLImageElement | null>(null);
-  const motoImagesRef = useRef<HTMLImageElement[]>([]);
+  const motoThinImageRef = useRef<HTMLImageElement | null>(null);
+  const motoFatImageRef = useRef<HTMLImageElement | null>(null);
   const bgImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     let loadedCount = 0;
-    const totalImages = 1 + MOTO_SPRITES.length + CITY_BACKGROUNDS.length;
+    const totalImages = 3 + CITY_BACKGROUNDS.length;
 
     const checkAllLoaded = () => {
       loadedCount++;
@@ -103,13 +98,17 @@ export default function GameCanvas() {
     dogImg.src = DOG_SPRITE;
     dogImageRef.current = dogImg;
 
-    MOTO_SPRITES.forEach((src, index) => {
-      const img = new Image();
-      img.onload = checkAllLoaded;
-      img.onerror = checkAllLoaded;
-      img.src = src;
-      motoImagesRef.current[index] = img;
-    });
+    const motoThinImg = new Image();
+    motoThinImg.onload = checkAllLoaded;
+    motoThinImg.onerror = checkAllLoaded;
+    motoThinImg.src = MOTO_THIN_SPRITE;
+    motoThinImageRef.current = motoThinImg;
+
+    const motoFatImg = new Image();
+    motoFatImg.onload = checkAllLoaded;
+    motoFatImg.onerror = checkAllLoaded;
+    motoFatImg.src = MOTO_FAT_SPRITE;
+    motoFatImageRef.current = motoFatImg;
 
     CITY_BACKGROUNDS.forEach((city) => {
       const img = new Image();
@@ -166,21 +165,16 @@ export default function GameCanvas() {
       } while (usedLanes.includes(lane));
       usedLanes.push(lane);
 
-      const types: Array<'normal' | 'fast' | 'armored'> = ['normal'];
-      if (game.phase >= 2) types.push('fast');
-      if (game.phase >= 4) types.push('armored');
-      const type = types[Math.floor(Math.random() * types.length)];
-
       const baseSpeed = 2 + game.phase * 0.3;
-      const speed = type === 'fast' ? baseSpeed * 1.3 : type === 'armored' ? baseSpeed * 0.7 : baseSpeed;
+      const isFat = Math.random() > 0.5;
+      const speed = isFat ? baseSpeed * 0.8 : baseSpeed * 1.1;
 
       const newMoto: Motorcycle = {
         id: motoIdRef.current++,
         lane,
         y: -100,
         speed,
-        type,
-        spriteIndex: Math.floor(Math.random() * MOTO_SPRITES.length),
+        isFat,
         hit: false,
         exploding: false,
         explosionFrame: 0,
@@ -202,114 +196,128 @@ export default function GameCanvas() {
     setFloatingTexts((prev) => [...prev, newText]);
   }, []);
 
-  const handleKick = useCallback(async () => {
-    if (!game.isPlaying || game.isPaused || kickCooldown || !game.sessionId) return;
+  const handleKick = useCallback(() => {
+    if (kickCooldown || !game.isPlaying || game.isPaused) return;
 
     setIsKicking(true);
     setKickCooldown(true);
-    audioManager.playSound('kick');
 
-    const playerY = CANVAS_HEIGHT - 150;
-    const kickRange = 120;
+    const playerX = getLaneX(playerLane);
 
-    const targetMoto = motorcycles.find(
-      (m) => !m.hit && !m.exploding && m.lane === playerLane && m.y > playerY - kickRange && m.y < playerY + 50
-    );
+    setMotorcycles((prev) => {
+      let newScore = game.score;
+      let newCombo = game.combo;
+      let hitAny = false;
 
-    let timing: 'miss' | 'hit' | 'perfect' = 'miss';
+      const updated = prev.map((m) => {
+        if (m.hit || m.exploding) return m;
 
-    if (targetMoto) {
-      const distFromPerfect = Math.abs(targetMoto.y - (playerY - 30));
-      timing = distFromPerfect < 20 ? 'perfect' : 'hit';
+        const motoX = getLaneX(m.lane);
+        const distance = Math.sqrt(
+          Math.pow(motoX - playerX, 2) + Math.pow(m.y - playerY, 2)
+        );
 
-      const motoX = getLaneX(targetMoto.lane);
-      createExplosion(motoX, targetMoto.y);
+        if (distance < 80) {
+          hitAny = true;
+          newCombo++;
+          const points = 100 * newCombo;
+          newScore += points;
 
-      setMotorcycles((prev) =>
-        prev.map((m) =>
-          m.id === targetMoto.id ? { ...m, hit: true, exploding: true } : m
-        )
-      );
+          createExplosion(motoX, m.y);
+          addFloatingText(motoX, m.y, `+${points}`, '#FFD700');
 
-      audioManager.playSound('hit');
-    }
-
-    try {
-      const result = await api.game.kick({
-        sessionId: game.sessionId,
-        timing,
-        enemyType: targetMoto?.type,
-      }) as any;
-
-      setGameState({
-        score: result.totalScore,
-        combo: result.combo,
-        phase: result.currentPhase,
+          return { ...m, hit: true, exploding: true };
+        }
+        return m;
       });
 
-      if (timing === 'perfect') {
-        audioManager.playSound('perfect');
-        addFloatingText(getLaneX(playerLane), playerY - 50, `${t('game.perfect', language)} +${result.pointsEarned}`, '#FFD700');
-      } else if (timing === 'hit') {
-        addFloatingText(getLaneX(playerLane), playerY - 50, `+${result.pointsEarned}`, '#00FF00');
-      } else {
-        audioManager.playSound('miss');
-        addFloatingText(getLaneX(playerLane), playerY - 50, t('game.miss', language), '#FF4444');
+      if (hitAny) {
+        setGameState({ score: newScore, combo: newCombo });
       }
 
-      if (result.phaseUp) {
-        audioManager.playSound('phase_up');
-        addFloatingText(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3, `${t('game.phase', language)} ${result.currentPhase}!`, '#FFD700');
-      }
-    } catch (error) {
-      console.error('Kick error:', error);
-    }
+      return updated;
+    });
 
     setTimeout(() => setIsKicking(false), 200);
     setTimeout(() => setKickCooldown(false), 400);
-  }, [game, motorcycles, playerLane, kickCooldown, language, setGameState, addFloatingText, createExplosion]);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, createExplosion, addFloatingText, setGameState]);
 
-  const movePlayer = useCallback((direction: 'left' | 'right') => {
-    setPlayerLane((prev) => {
-      if (direction === 'left' && prev > 0) return prev - 1;
-      if (direction === 'right' && prev < LANE_COUNT - 1) return prev + 1;
-      return prev;
-    });
-  }, []);
+  const movePlayer = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
+    if (!game.isPlaying || game.isPaused) return;
+
+    if (direction === 'left') {
+      setPlayerLane((prev) => Math.max(0, prev - 1));
+      setFacingRight(false);
+    } else if (direction === 'right') {
+      setPlayerLane((prev) => Math.min(LANE_COUNT - 1, prev + 1));
+      setFacingRight(true);
+    } else if (direction === 'up') {
+      setPlayerY((prev) => Math.max(100, prev - 50));
+    } else if (direction === 'down') {
+      setPlayerY((prev) => Math.min(CANVAS_HEIGHT - 80, prev + 50));
+    }
+  }, [game.isPlaying, game.isPaused]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
-        e.preventDefault();
-        movePlayer('left');
-      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-        e.preventDefault();
-        movePlayer('right');
-      } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-        e.preventDefault();
-        handleKick();
+      if (!game.isPlaying) return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          movePlayer('left');
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          movePlayer('right');
+          break;
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          movePlayer('up');
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          movePlayer('down');
+          break;
+        case ' ':
+          e.preventDefault();
+          handleKick();
+          break;
+        case 'Escape':
+          setGameState({ isPaused: !game.isPaused });
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [movePlayer, handleKick]);
+  }, [game.isPlaying, game.isPaused, movePlayer, handleKick, setGameState]);
 
   useEffect(() => {
     let touchStartX = 0;
+    let touchStartY = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchEndX - touchStartX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
 
-      if (Math.abs(diff) > 50) {
-        movePlayer(diff > 0 ? 'right' : 'left');
-      } else {
+      if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) {
         handleKick();
+      } else if (Math.abs(diffX) > Math.abs(diffY)) {
+        movePlayer(diffX > 0 ? 'right' : 'left');
+      } else {
+        movePlayer(diffY > 0 ? 'down' : 'up');
       }
     };
 
@@ -327,7 +335,7 @@ export default function GameCanvas() {
 
     const gameLoop = () => {
       const now = Date.now();
-      scrollOffset.current = (scrollOffset.current + 2) % 100;
+      scrollOffset.current = (scrollOffset.current + 3) % CANVAS_HEIGHT;
 
       const spawnInterval = Math.max(1500 - game.phase * 100, 600);
       if (now - lastSpawnRef.current > spawnInterval) {
@@ -335,16 +343,23 @@ export default function GameCanvas() {
         lastSpawnRef.current = now;
       }
 
-      setMotorcycles((prev) =>
-        prev
+      setMotorcycles((prev) => {
+        const updated = prev
           .map((m) => {
             if (m.exploding) {
               return { ...m, explosionFrame: m.explosionFrame + 1 };
             }
             return { ...m, y: m.y + m.speed };
           })
-          .filter((m) => m.y < CANVAS_HEIGHT + 100 && (!m.exploding || m.explosionFrame < 15))
-      );
+          .filter((m) => m.y < CANVAS_HEIGHT + 100 && (!m.exploding || m.explosionFrame < 15));
+
+        const missed = prev.filter((m) => m.y >= CANVAS_HEIGHT && !m.hit && !m.exploding);
+        if (missed.length > 0) {
+          setGameState({ combo: 0 });
+        }
+
+        return updated;
+      });
 
       setExplosions((prev) =>
         prev
@@ -376,7 +391,7 @@ export default function GameCanvas() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [game.isPlaying, game.isPaused, game.phase, spawnMotorcycle]);
+  }, [game.isPlaying, game.isPaused, game.phase, spawnMotorcycle, setGameState]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -389,23 +404,25 @@ export default function GameCanvas() {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
       const bgImage = bgImagesRef.current.get(currentCity.name);
-      drawCityBackground(ctx, currentCity, scrollOffset.current, bgImage);
-      drawRoad(ctx, scrollOffset.current);
+      drawBackground(ctx, bgImage, scrollOffset.current);
+      drawLaneMarkers(ctx);
+      
       motorcycles.filter(m => !m.exploding).forEach((moto) => {
-        const motoImg = motoImagesRef.current[moto.spriteIndex];
+        const motoImg = moto.isFat ? motoFatImageRef.current : motoThinImageRef.current;
         drawMotorcycle(ctx, moto, motoImg);
       });
-      drawPlayer(ctx, playerLane, isKicking, dogImageRef.current);
+      
+      drawPlayer(ctx, playerLane, playerY, isKicking, facingRight, dogImageRef.current);
       explosions.forEach((exp) => drawExplosion(ctx, exp));
       particles.forEach((p) => drawParticle(ctx, p));
       floatingTexts.forEach((ft) => drawFloatingText(ctx, ft, Date.now()));
-      drawCityName(ctx, currentCity.name);
+      drawHUD(ctx, currentCity.name, game.score, game.combo, game.phase);
 
       requestAnimationFrame(render);
     };
 
     render();
-  }, [motorcycles, explosions, particles, playerLane, isKicking, floatingTexts, currentCity, imagesLoaded]);
+  }, [motorcycles, explosions, particles, playerLane, playerY, isKicking, facingRight, floatingTexts, currentCity, imagesLoaded, game.score, game.combo, game.phase]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-melonary-darker to-melonary-dark p-4">
@@ -417,58 +434,61 @@ export default function GameCanvas() {
         style={{ maxWidth: '100%', height: 'auto' }}
       />
       
-      <div className="flex gap-4 mt-4 md:hidden">
+      <div className="flex gap-2 mt-4 md:hidden">
+        <div className="flex flex-col gap-2">
+          <button
+            onTouchStart={() => movePlayer('up')}
+            className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40"
+          >
+            ↑
+          </button>
+          <button
+            onTouchStart={() => movePlayer('down')}
+            className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40"
+          >
+            ↓
+          </button>
+        </div>
         <button
           onTouchStart={() => movePlayer('left')}
-          className="w-16 h-16 bg-melonary-gold/20 border-2 border-melonary-gold rounded-full flex items-center justify-center text-2xl text-melonary-gold active:bg-melonary-gold/40"
+          className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40 self-center"
         >
           ←
         </button>
         <button
           onTouchStart={() => handleKick()}
-          className="w-20 h-16 bg-melonary-gold border-2 border-melonary-amber rounded-full flex items-center justify-center text-sm font-bold text-melonary-dark active:bg-melonary-amber"
+          className="w-16 h-16 bg-melonary-gold border-2 border-melonary-amber rounded-full flex items-center justify-center text-xs font-bold text-melonary-dark active:bg-melonary-amber self-center"
         >
           KICK!
         </button>
         <button
           onTouchStart={() => movePlayer('right')}
-          className="w-16 h-16 bg-melonary-gold/20 border-2 border-melonary-gold rounded-full flex items-center justify-center text-2xl text-melonary-gold active:bg-melonary-gold/40"
+          className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40 self-center"
         >
           →
         </button>
       </div>
 
       <div className="mt-4 text-center text-gray-400 text-xs">
-        <span className="hidden md:block">← → mover | ESPACO voadora</span>
+        <span className="hidden md:block">WASD/Setas = mover | ESPACO = voadora</span>
         <span className="md:hidden">Deslize = mover | Toque = voadora</span>
       </div>
     </div>
   );
 }
 
-function drawCityBackground(ctx: CanvasRenderingContext2D, _city: typeof CITY_BACKGROUNDS[0], _scroll: number, bgImage?: HTMLImageElement | null) {
+function drawBackground(ctx: CanvasRenderingContext2D, bgImage: HTMLImageElement | undefined, scroll: number) {
   if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
-    const aspectRatio = bgImage.naturalWidth / bgImage.naturalHeight;
-    const canvasAspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+    const imgHeight = (CANVAS_WIDTH / bgImage.naturalWidth) * bgImage.naturalHeight;
+    const y1 = (scroll % imgHeight) - imgHeight;
+    const y2 = y1 + imgHeight;
+    const y3 = y2 + imgHeight;
     
-    let drawWidth, drawHeight, offsetX, offsetY;
-    
-    if (aspectRatio > canvasAspect) {
-      drawHeight = CANVAS_HEIGHT;
-      drawWidth = drawHeight * aspectRatio;
-      offsetX = -(drawWidth - CANVAS_WIDTH) / 2;
-      offsetY = 0;
-    } else {
-      drawWidth = CANVAS_WIDTH;
-      drawHeight = drawWidth / aspectRatio;
-      offsetX = 0;
-      offsetY = -(drawHeight - CANVAS_HEIGHT) / 2;
+    ctx.drawImage(bgImage, 0, y1, CANVAS_WIDTH, imgHeight);
+    ctx.drawImage(bgImage, 0, y2, CANVAS_WIDTH, imgHeight);
+    if (y3 < CANVAS_HEIGHT) {
+      ctx.drawImage(bgImage, 0, y3, CANVAS_WIDTH, imgHeight);
     }
-    
-    ctx.drawImage(bgImage, offsetX, offsetY, drawWidth, drawHeight);
-    
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   } else {
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
     gradient.addColorStop(0, '#1a0a2e');
@@ -476,50 +496,34 @@ function drawCityBackground(ctx: CanvasRenderingContext2D, _city: typeof CITY_BA
     gradient.addColorStop(1, '#4a2c6e');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    ctx.fillStyle = 'rgba(40, 40, 50, 0.9)';
+    ctx.fillRect(20, 0, CANVAS_WIDTH - 40, CANVAS_HEIGHT);
   }
 }
 
-function drawRoad(ctx: CanvasRenderingContext2D, scroll: number) {
-  ctx.fillStyle = 'rgba(30, 30, 40, 0.9)';
-  ctx.fillRect(0, 150, CANVAS_WIDTH, CANVAS_HEIGHT - 150);
-
-  ctx.strokeStyle = '#FFD700';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(15, 150);
-  ctx.lineTo(15, CANVAS_HEIGHT);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(CANVAS_WIDTH - 15, 150);
-  ctx.lineTo(CANVAS_WIDTH - 15, CANVAS_HEIGHT);
-  ctx.stroke();
-
+function drawLaneMarkers(ctx: CanvasRenderingContext2D) {
   const laneWidth = CANVAS_WIDTH / LANE_COUNT;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
   ctx.lineWidth = 2;
-  ctx.setLineDash([30, 20]);
+  ctx.setLineDash([20, 15]);
+  
   for (let i = 1; i < LANE_COUNT; i++) {
     ctx.beginPath();
-    ctx.moveTo(i * laneWidth, 150);
+    ctx.moveTo(i * laneWidth, 0);
     ctx.lineTo(i * laneWidth, CANVAS_HEIGHT);
     ctx.stroke();
   }
   ctx.setLineDash([]);
-
-  for (let i = 0; i < 15; i++) {
-    const y = ((scroll * 3 + i * 50) % (CANVAS_HEIGHT - 150)) + 150;
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.05 + (y / CANVAS_HEIGHT) * 0.1})`;
-    ctx.fillRect(20, y, CANVAS_WIDTH - 40, 2);
-  }
 }
 
-function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle, motoImage?: HTMLImageElement | null) {
+function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle, motoImage: HTMLImageElement | null) {
   const x = (CANVAS_WIDTH / LANE_COUNT) * moto.lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
   const y = moto.y;
 
-  const scale = 0.3 + (y / CANVAS_HEIGHT) * 0.7;
-  const width = 80 * scale;
-  const height = 100 * scale;
+  const scale = 0.4 + (y / CANVAS_HEIGHT) * 0.5;
+  const width = 70 * scale;
+  const height = 90 * scale;
 
   if (motoImage && motoImage.complete && motoImage.naturalWidth > 0) {
     ctx.save();
@@ -532,68 +536,50 @@ function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle, motoIma
     );
     ctx.restore();
   } else {
-    const colors = {
-      normal: { body: '#333', accent: '#666' },
-      fast: { body: '#8B0000', accent: '#FF4500' },
-      armored: { body: '#2F4F4F', accent: '#708090' },
-    };
-    const color = colors[moto.type];
-
-    ctx.fillStyle = color.body;
+    ctx.fillStyle = moto.isFat ? '#444' : '#333';
     ctx.beginPath();
-    ctx.ellipse(x, y, width / 2, height / 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, width / 2.5, height / 2, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.fillStyle = color.accent;
-    ctx.beginPath();
-    ctx.arc(x, y - height / 3, width / 4, 0, Math.PI * 2);
-    ctx.fill();
+    
+    ctx.fillStyle = '#CC0000';
+    ctx.fillRect(x - width / 4, y - height / 3, width / 2, height / 4);
   }
 }
 
-function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: boolean, dogImage?: HTMLImageElement | null) {
+function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, y: number, isKicking: boolean, facingRight: boolean, dogImage: HTMLImageElement | null) {
   const x = (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
-  const y = CANVAS_HEIGHT - 120;
-  const width = 90;
-  const height = 110;
+  const width = 80;
+  const height = 100;
 
   ctx.save();
-
+  
+  ctx.translate(x, y);
+  
+  if (!facingRight) {
+    ctx.scale(-1, 1);
+  }
+  
   if (isKicking) {
-    ctx.translate(x, y);
-    ctx.rotate(-0.3);
-    ctx.translate(-x, -y);
+    ctx.rotate(0.3);
   }
 
   if (dogImage && dogImage.complete && dogImage.naturalWidth > 0) {
     ctx.drawImage(
       dogImage,
-      x - width / 2,
-      y - height / 2,
+      -width / 2,
+      -height / 2,
       width,
       height
     );
   } else {
     ctx.fillStyle = '#D2691E';
     ctx.beginPath();
-    ctx.ellipse(x, y, 35, 45, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 30, 40, 0, 0, Math.PI * 2);
     ctx.fill();
-
+    
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.ellipse(x, y + 5, 30, 38, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#D2691E';
-    ctx.beginPath();
-    ctx.ellipse(x, y - 50, 28, 25, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  if (isKicking && (!dogImage || !dogImage.complete)) {
-    ctx.fillStyle = '#D2691E';
-    ctx.beginPath();
-    ctx.ellipse(x + 45, y - 35, 12, 25, 0.8, 0, Math.PI * 2);
+    ctx.ellipse(0, 5, 25, 32, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -602,7 +588,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: bool
 
 function drawExplosion(ctx: CanvasRenderingContext2D, exp: Explosion) {
   const progress = exp.frame / exp.maxFrames;
-  const size = 30 + progress * 50;
+  const size = 40 + progress * 60;
   const alpha = 1 - progress;
 
   ctx.save();
@@ -622,7 +608,7 @@ function drawExplosion(ctx: CanvasRenderingContext2D, exp: Explosion) {
   ctx.fill();
 
   ctx.fillStyle = '#FFD700';
-  ctx.font = 'bold 24px Impact';
+  ctx.font = 'bold 28px Impact';
   ctx.textAlign = 'center';
   if (exp.frame < 8) {
     const texts = ['POW!', 'BOOM!', 'BAM!', 'CRASH!'];
@@ -648,17 +634,39 @@ function drawFloatingText(ctx: CanvasRenderingContext2D, ft: FloatingText, now: 
   const alpha = 1 - progress;
   const yOffset = progress * 50;
 
+  ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = ft.color;
-  ctx.font = 'bold 18px "Press Start 2P", cursive';
+  ctx.font = 'bold 20px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.strokeText(ft.text, ft.x, ft.y - yOffset);
   ctx.fillText(ft.text, ft.x, ft.y - yOffset);
-  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
-function drawCityName(ctx: CanvasRenderingContext2D, name: string) {
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
-  ctx.font = 'bold 14px Arial';
+function drawHUD(ctx: CanvasRenderingContext2D, cityName: string, score: number, combo: number, phase: number) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, 50);
+  
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 12px Arial';
   ctx.textAlign = 'left';
-  ctx.fillText(name, 25, 170);
+  ctx.fillText(cityName, 10, 20);
+  
+  ctx.fillStyle = '#FFF';
+  ctx.font = 'bold 14px Arial';
+  ctx.fillText(`FASE ${phase}`, 10, 38);
+  
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 16px Arial';
+  ctx.fillText(`${score}`, CANVAS_WIDTH - 10, 20);
+  
+  if (combo > 1) {
+    ctx.fillStyle = '#FF6347';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText(`x${combo} COMBO!`, CANVAS_WIDTH - 10, 38);
+  }
 }
