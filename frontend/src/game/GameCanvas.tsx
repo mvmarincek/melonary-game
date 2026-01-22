@@ -166,6 +166,8 @@ export default function GameCanvas() {
   const motoIdRef = useRef(0);
   const textIdRef = useRef(0);
   const hitCountRef = useRef(0);
+  const lastHitTimeRef = useRef(Date.now());
+  const COMBO_TIMEOUT_MS = 2500;
   
   const dogImg = useRef<HTMLImageElement | null>(null);
   const motoThinImg = useRef<HTMLImageElement | null>(null);
@@ -249,6 +251,7 @@ export default function GameCanvas() {
           const points = basePoints + (comboBonus * 2);
           newScore += points;
           hitCountRef.current++;
+          lastHitTimeRef.current = Date.now();
           playPunch();
           if (hitCountRef.current % 5 === 0) {
             setTimeout(() => playScream(), 80);
@@ -333,10 +336,11 @@ export default function GameCanvas() {
           if (m.hit) return false;
           return m.lane === 0 ? m.y < CANVAS_HEIGHT + Math.round(60 * SCALE) : m.y > -Math.round(60 * SCALE);
         });
-        const missed = prev.filter(m => !m.hit && (m.lane === 0 ? m.y >= CANVAS_HEIGHT + Math.round(60 * SCALE) : m.y <= -Math.round(60 * SCALE)));
-        if (missed.length > 0) setGameState({ combo: 0 });
         return updated;
       });
+      if (game.combo > 0 && Date.now() - lastHitTimeRef.current > COMBO_TIMEOUT_MS) {
+        setGameState({ combo: 0 });
+      }
       setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 20));
       animId = requestAnimationFrame(loop);
     };
