@@ -67,11 +67,30 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-melonary-darker to-melonary-dark">
-      <div className="card max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-melonary-gold mb-2">MELONARY</h1>
-          <p className="text-gray-400 text-xs">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-melonary-darker to-melonary-dark relative overflow-hidden">
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 right-20 w-64 h-64 bg-melonary-gold rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 left-10 w-48 h-48 bg-melonary-caramel rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="card max-w-md w-full relative z-10">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 mx-auto mb-4 relative">
+            <img 
+              src="/melonary-hero.png" 
+              alt="Melonary"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden w-full h-full bg-gradient-to-br from-melonary-caramel to-melonary-bronze rounded-full"></div>
+          </div>
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-melonary-gold to-melonary-amber">
+            MELONARY
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">
             {mode === 'login' ? t('auth.login', language) : t('auth.register', language)}
           </p>
         </div>
@@ -96,6 +115,7 @@ export default function Auth() {
                   onChange={handleChange}
                   required
                   className="input-field"
+                  placeholder="Seu nome completo"
                 />
               </div>
 
@@ -111,6 +131,7 @@ export default function Auth() {
                   required
                   pattern="[a-zA-Z0-9_]+"
                   className="input-field"
+                  placeholder="nome_no_jogo"
                 />
               </div>
             </>
@@ -127,6 +148,7 @@ export default function Auth() {
               onChange={handleChange}
               required
               className="input-field"
+              placeholder="seu@email.com"
             />
           </div>
 
@@ -142,6 +164,7 @@ export default function Auth() {
               required
               minLength={6}
               className="input-field"
+              placeholder="******"
             />
           </div>
 
@@ -163,32 +186,33 @@ export default function Auth() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  {t('auth.x_user', language)} {t('auth.optional', language)}
-                </label>
-                <input
-                  type="text"
-                  name="x_username"
-                  value={formData.x_username}
-                  onChange={handleChange}
-                  placeholder="@username"
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  {t('auth.tiktok_user', language)} {t('auth.optional', language)}
-                </label>
-                <input
-                  type="text"
-                  name="tiktok_username"
-                  value={formData.tiktok_username}
-                  onChange={handleChange}
-                  placeholder="@username"
-                  className="input-field"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    X (Twitter) <span className="text-gray-600">{t('auth.optional', language)}</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="x_username"
+                    value={formData.x_username}
+                    onChange={handleChange}
+                    placeholder="@usuario"
+                    className="input-field text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    TikTok <span className="text-gray-600">{t('auth.optional', language)}</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="tiktok_username"
+                    value={formData.tiktok_username}
+                    onChange={handleChange}
+                    placeholder="@usuario"
+                    className="input-field text-sm"
+                  />
+                </div>
               </div>
             </>
           )}
@@ -196,7 +220,7 @@ export default function Auth() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn-gold w-full mt-6"
+            className="btn-gold w-full mt-6 py-3 text-lg"
           >
             {isLoading
               ? t('game.loading', language)
@@ -222,7 +246,7 @@ export default function Auth() {
             <button
               key={lang}
               onClick={() => setLanguage(lang)}
-              className={`px-3 py-1 text-xs rounded ${
+              className={`px-3 py-1 text-xs rounded transition ${
                 language === lang
                   ? 'bg-melonary-gold text-melonary-dark'
                   : 'bg-melonary-dark text-gray-400 hover:text-melonary-gold'

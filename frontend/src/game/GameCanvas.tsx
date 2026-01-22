@@ -4,13 +4,15 @@ import { api } from '../services/api';
 import { audioManager } from '../services/audio';
 import { t } from '../i18n/translations';
 
-interface Enemy {
+interface Motorcycle {
   id: number;
-  x: number;
+  lane: number;
   y: number;
   speed: number;
-  type: string;
+  type: 'normal' | 'fast' | 'armored';
   hit: boolean;
+  falling: boolean;
+  fallAngle: number;
 }
 
 interface FloatingText {
@@ -22,38 +24,62 @@ interface FloatingText {
   createdAt: number;
 }
 
+const LANE_COUNT = 5;
+const CANVAS_WIDTH = 400;
+const CANVAS_HEIGHT = 700;
+
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { language, game, setGameState } = useStore();
-  const [enemies, setEnemies] = useState<Enemy[]>([]);
+  const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [, setMelonaryY] = useState(0);
+  const [playerLane, setPlayerLane] = useState(2);
   const [isKicking, setIsKicking] = useState(false);
+  const [kickCooldown, setKickCooldown] = useState(false);
   const lastSpawnRef = useRef(0);
-  const enemyIdRef = useRef(0);
+  const motoIdRef = useRef(0);
   const textIdRef = useRef(0);
   const animationRef = useRef<number>();
+  const keysPressed = useRef<Set<string>>(new Set());
 
-  const spawnEnemy = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const getLaneX = (lane: number) => {
+    const laneWidth = CANVAS_WIDTH / LANE_COUNT;
+    return laneWidth * lane + laneWidth / 2;
+  };
 
-    const types = ['biker', 'fast_biker', 'armored_biker'];
-    const type = types[Math.floor(Math.random() * Math.min(game.phase, types.length))];
-    
-    const baseSpeed = 3 + game.phase * 0.5;
-    const speed = type === 'fast_biker' ? baseSpeed * 1.5 : baseSpeed;
+  const spawnMotorcycle = useCallback(() => {
+    const maxMotos = Math.min(1 + Math.floor(game.phase / 2), 3);
+    const motoCount = Math.floor(Math.random() * maxMotos) + 1;
+    const usedLanes: number[] = [];
 
-    const newEnemy: Enemy = {
-      id: enemyIdRef.current++,
-      x: canvas.width + 100,
-      y: canvas.height * 0.6 + Math.random() * 50 - 25,
-      speed,
-      type,
-      hit: false,
-    };
+    for (let i = 0; i < motoCount; i++) {
+      let lane: number;
+      do {
+        lane = Math.floor(Math.random() * LANE_COUNT);
+      } while (usedLanes.includes(lane));
+      usedLanes.push(lane);
 
-    setEnemies((prev) => [...prev, newEnemy]);
+      const types: Array<'normal' | 'fast' | 'armored'> = ['normal'];
+      if (game.phase >= 2) types.push('fast');
+      if (game.phase >= 4) types.push('armored');
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      const baseSpeed = 2 + game.phase * 0.3;
+      const speed = type === 'fast' ? baseSpeed * 1.3 : type === 'armored' ? baseSpeed * 0.7 : baseSpeed;
+
+      const newMoto: Motorcycle = {
+        id: motoIdRef.current++,
+        lane,
+        y: -100,
+        speed,
+        type,
+        hit: false,
+        falling: false,
+        fallAngle: 0,
+      };
+
+      setMotorcycles((prev) => [...prev, newMoto]);
+    }
   }, [game.phase]);
 
   const addFloatingText = useCallback((x: number, y: number, text: string, color: string) => {
@@ -69,35 +95,29 @@ export default function GameCanvas() {
   }, []);
 
   const handleKick = useCallback(async () => {
-    if (!game.isPlaying || game.isPaused || isKicking || !game.sessionId) return;
+    if (!game.isPlaying || game.isPaused || kickCooldown || !game.sessionId) return;
 
     setIsKicking(true);
+    setKickCooldown(true);
     audioManager.playSound('kick');
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const playerY = CANVAS_HEIGHT - 150;
+    const kickRange = 120;
 
-    const kickZoneStart = canvas.width * 0.2;
-    const kickZoneEnd = canvas.width * 0.4;
-
-    const targetEnemy = enemies.find(
-      (e) => !e.hit && e.x >= kickZoneStart && e.x <= kickZoneEnd
+    const targetMoto = motorcycles.find(
+      (m) => !m.hit && !m.falling && m.lane === playerLane && m.y > playerY - kickRange && m.y < playerY + 50
     );
 
     let timing: 'miss' | 'hit' | 'perfect' = 'miss';
-    
-    if (targetEnemy) {
-      const perfectZone = (kickZoneStart + kickZoneEnd) / 2;
-      const distFromPerfect = Math.abs(targetEnemy.x - perfectZone);
-      
-      if (distFromPerfect < 30) {
-        timing = 'perfect';
-      } else {
-        timing = 'hit';
-      }
 
-      setEnemies((prev) =>
-        prev.map((e) => (e.id === targetEnemy.id ? { ...e, hit: true } : e))
+    if (targetMoto) {
+      const distFromPerfect = Math.abs(targetMoto.y - (playerY - 30));
+      timing = distFromPerfect < 20 ? 'perfect' : 'hit';
+
+      setMotorcycles((prev) =>
+        prev.map((m) =>
+          m.id === targetMoto.id ? { ...m, hit: true, falling: true } : m
+        )
       );
     }
 
@@ -105,7 +125,7 @@ export default function GameCanvas() {
       const result = await api.game.kick({
         sessionId: game.sessionId,
         timing,
-        enemyType: targetEnemy?.type,
+        enemyType: targetMoto?.type,
       }) as any;
 
       setGameState({
@@ -116,105 +136,114 @@ export default function GameCanvas() {
 
       if (timing === 'perfect') {
         audioManager.playSound('perfect');
-        addFloatingText(
-          targetEnemy!.x,
-          targetEnemy!.y - 30,
-          `${t('game.perfect', language)} +${result.pointsEarned}`,
-          '#FFD700'
-        );
+        addFloatingText(getLaneX(playerLane), playerY - 50, `${t('game.perfect', language)} +${result.pointsEarned}`, '#FFD700');
       } else if (timing === 'hit') {
         audioManager.playSound('hit');
-        addFloatingText(
-          targetEnemy!.x,
-          targetEnemy!.y - 30,
-          `${t('game.hit', language)} +${result.pointsEarned}`,
-          '#00FF00'
-        );
+        addFloatingText(getLaneX(playerLane), playerY - 50, `+${result.pointsEarned}`, '#00FF00');
       } else {
         audioManager.playSound('miss');
-        addFloatingText(
-          canvas.width * 0.3,
-          canvas.height * 0.5,
-          t('game.miss', language),
-          '#FF4444'
-        );
-      }
-
-      if (result.comboBreak) {
-        audioManager.playSound('miss');
+        addFloatingText(getLaneX(playerLane), playerY - 50, t('game.miss', language), '#FF4444');
       }
 
       if (result.phaseUp) {
         audioManager.playSound('phase_up');
-        addFloatingText(
-          canvas.width / 2,
-          canvas.height / 3,
-          `${t('game.phase', language)} ${result.currentPhase}!`,
-          '#FFD700'
-        );
+        addFloatingText(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3, `${t('game.phase', language)} ${result.currentPhase}!`, '#FFD700');
       }
     } catch (error) {
       console.error('Kick error:', error);
     }
 
     setTimeout(() => setIsKicking(false), 200);
-  }, [game, enemies, isKicking, language, setGameState, addFloatingText]);
+    setTimeout(() => setKickCooldown(false), 400);
+  }, [game, motorcycles, playerLane, kickCooldown, language, setGameState, addFloatingText]);
+
+  const movePlayer = useCallback((direction: 'left' | 'right') => {
+    setPlayerLane((prev) => {
+      if (direction === 'left' && prev > 0) return prev - 1;
+      if (direction === 'right' && prev < LANE_COUNT - 1) return prev + 1;
+      return prev;
+    });
+  }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      setMelonaryY(canvas.height * 0.55);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysPressed.current.add(e.code);
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        e.preventDefault();
+        movePlayer('left');
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        e.preventDefault();
+        movePlayer('right');
+      } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        handleKick();
+      }
     };
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysPressed.current.delete(e.code);
+    };
 
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [movePlayer, handleKick]);
+
+  useEffect(() => {
+    let touchStartX = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchEndX - touchStartX;
+
+      if (Math.abs(diff) > 50) {
+        movePlayer(diff > 0 ? 'right' : 'left');
+      } else {
+        handleKick();
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [movePlayer, handleKick]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const gameLoop = () => {
       const now = Date.now();
 
-      const spawnInterval = Math.max(800 - game.phase * 50, 400);
+      const spawnInterval = Math.max(1500 - game.phase * 100, 600);
       if (now - lastSpawnRef.current > spawnInterval) {
-        spawnEnemy();
+        spawnMotorcycle();
         lastSpawnRef.current = now;
       }
 
-      setEnemies((prev) =>
+      setMotorcycles((prev) =>
         prev
-          .map((e) => ({ ...e, x: e.x - e.speed }))
-          .filter((e) => e.x > -100 && (!e.hit || e.x > -50))
+          .map((m) => {
+            if (m.falling) {
+              return { ...m, y: m.y + m.speed, fallAngle: Math.min(m.fallAngle + 5, 90) };
+            }
+            return { ...m, y: m.y + m.speed };
+          })
+          .filter((m) => m.y < CANVAS_HEIGHT + 100)
       );
 
-      setFloatingTexts((prev) =>
-        prev.filter((ft) => now - ft.createdAt < 1000)
-      );
-
-      ctx.fillStyle = getPhaseBackground(game.phase);
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      drawGround(ctx, canvas);
-      drawKickZone(ctx, canvas);
-      drawMelonary(ctx, canvas, isKicking);
-      enemies.forEach((enemy) => drawEnemy(ctx, enemy));
-      floatingTexts.forEach((ft) => drawFloatingText(ctx, ft, now));
+      setFloatingTexts((prev) => prev.filter((ft) => now - ft.createdAt < 1000));
 
       animationRef.current = requestAnimationFrame(gameLoop);
     };
@@ -226,170 +255,232 @@ export default function GameCanvas() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [game.isPlaying, game.isPaused, game.phase, enemies, floatingTexts, isKicking, spawnEnemy]);
+  }, [game.isPlaying, game.isPaused, game.phase, spawnMotorcycle]);
 
   useEffect(() => {
-    const handleInput = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault();
-      handleKick();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const render = () => {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      drawRoad(ctx);
+      motorcycles.forEach((moto) => drawMotorcycle(ctx, moto));
+      drawPlayer(ctx, playerLane, isKicking);
+      floatingTexts.forEach((ft) => drawFloatingText(ctx, ft, Date.now()));
+
+      requestAnimationFrame(render);
     };
 
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        e.preventDefault();
-        handleKick();
-      }
-    };
-
-    window.addEventListener('mousedown', handleInput);
-    window.addEventListener('touchstart', handleInput);
-    window.addEventListener('keydown', handleKeydown);
-
-    return () => {
-      window.removeEventListener('mousedown', handleInput);
-      window.removeEventListener('touchstart', handleInput);
-      window.removeEventListener('keydown', handleKeydown);
-    };
-  }, [handleKick]);
+    render();
+  }, [motorcycles, playerLane, isKicking, floatingTexts]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="game-canvas"
-      style={{ touchAction: 'none' }}
-    />
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-melonary-darker to-melonary-dark p-4">
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="border-4 border-melonary-gold rounded-lg shadow-2xl"
+        style={{ maxWidth: '100%', height: 'auto' }}
+      />
+      
+      <div className="flex gap-4 mt-4 md:hidden">
+        <button
+          onTouchStart={() => movePlayer('left')}
+          className="w-16 h-16 bg-melonary-gold/20 border-2 border-melonary-gold rounded-full flex items-center justify-center text-2xl text-melonary-gold active:bg-melonary-gold/40"
+        >
+          ←
+        </button>
+        <button
+          onTouchStart={() => handleKick()}
+          className="w-20 h-16 bg-melonary-gold border-2 border-melonary-amber rounded-full flex items-center justify-center text-sm font-bold text-melonary-dark active:bg-melonary-amber"
+        >
+          KICK!
+        </button>
+        <button
+          onTouchStart={() => movePlayer('right')}
+          className="w-16 h-16 bg-melonary-gold/20 border-2 border-melonary-gold rounded-full flex items-center justify-center text-2xl text-melonary-gold active:bg-melonary-gold/40"
+        >
+          →
+        </button>
+      </div>
+
+      <div className="mt-4 text-center text-gray-400 text-xs">
+        <span className="hidden md:block">← → para mover | ESPAÇO para voadora</span>
+        <span className="md:hidden">Deslize para mover | Toque para voadora</span>
+      </div>
+    </div>
   );
 }
 
-function getPhaseBackground(phase: number): string {
-  const backgrounds: Record<number, string> = {
-    1: '#2d1b0e',
-    2: '#1a3a1a',
-    3: '#1a1a3a',
-    4: '#3a2a1a',
-    5: '#0a0a1a',
-    6: '#1a0a2a',
-  };
-  return backgrounds[phase] || backgrounds[1];
-}
+function drawRoad(ctx: CanvasRenderingContext2D) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+  gradient.addColorStop(0, '#1a1a2e');
+  gradient.addColorStop(0.3, '#2d2d44');
+  gradient.addColorStop(1, '#3d3d5c');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-function drawGround(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-  const groundY = canvas.height * 0.7;
-  
-  ctx.fillStyle = '#333';
-  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-  
   ctx.strokeStyle = '#FFD700';
   ctx.lineWidth = 3;
-  ctx.setLineDash([30, 20]);
-  ctx.beginPath();
-  ctx.moveTo(0, groundY + 30);
-  ctx.lineTo(canvas.width, groundY + 30);
-  ctx.stroke();
   ctx.setLineDash([]);
-}
+  ctx.beginPath();
+  ctx.moveTo(10, 0);
+  ctx.lineTo(10, CANVAS_HEIGHT);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(CANVAS_WIDTH - 10, 0);
+  ctx.lineTo(CANVAS_WIDTH - 10, CANVAS_HEIGHT);
+  ctx.stroke();
 
-function drawKickZone(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-  const zoneStart = canvas.width * 0.2;
-  const zoneEnd = canvas.width * 0.4;
-  const groundY = canvas.height * 0.7;
-
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
-  ctx.fillRect(zoneStart, 0, zoneEnd - zoneStart, groundY);
-
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+  const laneWidth = CANVAS_WIDTH / LANE_COUNT;
+  ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
-  ctx.strokeRect(zoneStart, 0, zoneEnd - zoneStart, groundY);
+  ctx.setLineDash([30, 20]);
+  for (let i = 1; i < LANE_COUNT; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * laneWidth, 0);
+    ctx.lineTo(i * laneWidth, CANVAS_HEIGHT);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < 10; i++) {
+    const y = (Date.now() / 20 + i * 80) % CANVAS_HEIGHT;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.fillRect(0, y, CANVAS_WIDTH, 2);
+  }
 }
 
-function drawMelonary(
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  isKicking: boolean
-) {
-  const x = canvas.width * 0.15;
-  const y = canvas.height * 0.55;
-  const size = 80;
+function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle) {
+  const x = (CANVAS_WIDTH / LANE_COUNT) * moto.lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
+  const y = moto.y;
 
   ctx.save();
   
+  if (moto.falling) {
+    ctx.translate(x, y);
+    ctx.rotate((moto.fallAngle * Math.PI) / 180);
+    ctx.translate(-x, -y);
+    ctx.globalAlpha = 1 - moto.fallAngle / 90;
+  }
+
+  const scale = 0.5 + (y / CANVAS_HEIGHT) * 0.5;
+  const width = 50 * scale;
+  const height = 70 * scale;
+
+  const colors = {
+    normal: { body: '#333', accent: '#666' },
+    fast: { body: '#8B0000', accent: '#FF4500' },
+    armored: { body: '#2F4F4F', accent: '#708090' },
+  };
+  const color = colors[moto.type];
+
+  ctx.fillStyle = color.body;
+  ctx.beginPath();
+  ctx.ellipse(x, y, width / 2, height / 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.ellipse(x - width / 4, y + height / 4, width / 5, width / 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + width / 4, y + height / 4, width / 5, width / 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFE4B5';
+  ctx.beginPath();
+  ctx.arc(x, y - height / 3, width / 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = color.accent;
+  ctx.beginPath();
+  ctx.ellipse(x, y - height / 2.5, width / 3, width / 5, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.ellipse(x - width / 5, y + height / 2.5, width / 8, width / 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + width / 5, y + height / 2.5, width / 8, width / 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: boolean) {
+  const x = (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
+  const y = CANVAS_HEIGHT - 120;
+
+  ctx.save();
+
   if (isKicking) {
-    ctx.translate(x + size / 2, y + size / 2);
-    ctx.rotate(Math.PI / 6);
-    ctx.translate(-(x + size / 2), -(y + size / 2));
+    ctx.translate(x, y);
+    ctx.rotate(-0.3);
+    ctx.translate(-x, -y);
   }
 
   ctx.fillStyle = '#D2691E';
   ctx.beginPath();
-  ctx.ellipse(x + size / 2, y + size / 2, size / 2, size / 2.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, 35, 45, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#FFD700';
   ctx.beginPath();
-  ctx.ellipse(x + size / 2, y + size / 2.2, size / 2.3, size / 2.8, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + 5, 30, 38, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#D2691E';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 50, 28, 25, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 48, 24, 21, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#D2691E';
+  ctx.beginPath();
+  ctx.ellipse(x - 20, y - 65, 8, 12, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + 20, y - 65, 8, 12, 0.3, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(x + size * 0.25, y + size * 0.3, size * 0.15, size * 0.08);
-  ctx.fillRect(x + size * 0.55, y + size * 0.3, size * 0.15, size * 0.08);
-
+  ctx.fillRect(x - 18, y - 55, 12, 6);
+  ctx.fillRect(x + 6, y - 55, 12, 6);
+  
   ctx.fillStyle = '#1a1a2e';
   ctx.beginPath();
-  ctx.ellipse(x + size / 2, y + size * 0.55, size * 0.12, size * 0.08, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y - 42, 6, 4, 0, 0, Math.PI * 2);
   ctx.fill();
 
   if (isKicking) {
     ctx.fillStyle = '#D2691E';
     ctx.beginPath();
-    ctx.ellipse(x + size * 1.1, y + size * 0.3, size * 0.15, size * 0.3, Math.PI / 4, 0, Math.PI * 2);
+    ctx.ellipse(x + 40, y - 30, 12, 25, 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.ellipse(x + 42, y - 28, 10, 20, 0.8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#FFD700';
     ctx.font = 'bold 16px Arial';
-    ctx.fillText('POW!', x + size * 1.2, y);
+    ctx.fillText('POW!', x + 50, y - 50);
   }
 
   ctx.restore();
 }
 
-function drawEnemy(ctx: CanvasRenderingContext2D, enemy: Enemy) {
-  const size = 70;
-
-  if (enemy.hit) {
-    ctx.globalAlpha = 0.5;
-  }
-
-  ctx.fillStyle = enemy.type === 'fast_biker' ? '#FF6600' : 
-                   enemy.type === 'armored_biker' ? '#666666' : '#444444';
-  
-  ctx.fillRect(enemy.x, enemy.y + size * 0.3, size * 0.8, size * 0.4);
-
-  ctx.fillStyle = '#222';
-  ctx.beginPath();
-  ctx.arc(enemy.x + size * 0.2, enemy.y + size * 0.8, size * 0.15, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(enemy.x + size * 0.6, enemy.y + size * 0.8, size * 0.15, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FFE4B5';
-  ctx.beginPath();
-  ctx.arc(enemy.x + size * 0.4, enemy.y + size * 0.2, size * 0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#333';
-  ctx.beginPath();
-  ctx.ellipse(enemy.x + size * 0.4, enemy.y + size * 0.1, size * 0.25, size * 0.12, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  ctx.globalAlpha = 1;
-}
-
-function drawFloatingText(
-  ctx: CanvasRenderingContext2D,
-  ft: FloatingText,
-  now: number
-) {
+function drawFloatingText(ctx: CanvasRenderingContext2D, ft: FloatingText, now: number) {
   const age = now - ft.createdAt;
   const progress = age / 1000;
   const alpha = 1 - progress;
@@ -397,7 +488,7 @@ function drawFloatingText(
 
   ctx.globalAlpha = alpha;
   ctx.fillStyle = ft.color;
-  ctx.font = 'bold 24px "Press Start 2P", cursive';
+  ctx.font = 'bold 18px "Press Start 2P", cursive';
   ctx.textAlign = 'center';
   ctx.fillText(ft.text, ft.x, ft.y - yOffset);
   ctx.globalAlpha = 1;
