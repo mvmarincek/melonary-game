@@ -1,0 +1,11 @@
+{
+  "name": "melonary-game",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate-assets": "node scripts/generateAssets.js"
+  },
+  "dependencies": {
+    "openai": "^4.24.1"
+  }
+}

@@ -10,6 +10,7 @@ interface Motorcycle {
   y: number;
   speed: number;
   type: 'normal' | 'fast' | 'armored';
+  spriteIndex: number;
   hit: boolean;
   exploding: boolean;
   explosionFrame: number;
@@ -47,13 +48,21 @@ const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
 
 const CITY_BACKGROUNDS = [
-  { name: 'Rio de Janeiro', colors: ['#1a0a2e', '#2d1b4e', '#4a2c6e'], landmarks: 'cristo' },
-  { name: 'New York', colors: ['#0a1628', '#1a2a4a', '#2a3a5a'], landmarks: 'empire' },
-  { name: 'Tokyo', colors: ['#1a0a1a', '#2e1a3e', '#4a2a5e'], landmarks: 'tower' },
-  { name: 'Paris', colors: ['#1a1a2e', '#2a2a4e', '#3a3a5e'], landmarks: 'eiffel' },
-  { name: 'Dubai', colors: ['#2a1a0a', '#4a3a1a', '#6a5a2a'], landmarks: 'burj' },
-  { name: 'Los Angeles', colors: ['#1a1a1a', '#2a2a3a', '#3a3a4a'], landmarks: 'hollywood' },
+  { name: 'Rio de Janeiro', bg: '/assets/bg-rio.png' },
+  { name: 'New York', bg: '/assets/bg-newyork.png' },
+  { name: 'Tokyo', bg: '/assets/bg-tokyo.png' },
+  { name: 'Paris', bg: '/assets/bg-paris.png' },
+  { name: 'Dubai', bg: '/assets/bg-dubai.png' },
+  { name: 'Los Angeles', bg: '/assets/bg-losangeles.png' },
 ];
+
+const MOTO_SPRITES = [
+  '/assets/moto-sprite.png',
+  '/assets/moto-sprite-2.png',
+  '/assets/moto-sprite-3.png',
+];
+
+const DOG_SPRITE = '/assets/dog-sprite.png';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,12 +74,51 @@ export default function GameCanvas() {
   const [playerLane, setPlayerLane] = useState(2);
   const [isKicking, setIsKicking] = useState(false);
   const [kickCooldown, setKickCooldown] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
   const explosionIdRef = useRef(0);
   const textIdRef = useRef(0);
   const animationRef = useRef<number>();
   const scrollOffset = useRef(0);
+
+  const dogImageRef = useRef<HTMLImageElement | null>(null);
+  const motoImagesRef = useRef<HTMLImageElement[]>([]);
+  const bgImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  useEffect(() => {
+    let loadedCount = 0;
+    const totalImages = 1 + MOTO_SPRITES.length + CITY_BACKGROUNDS.length;
+
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= totalImages) {
+        setImagesLoaded(true);
+      }
+    };
+
+    const dogImg = new Image();
+    dogImg.onload = checkAllLoaded;
+    dogImg.onerror = checkAllLoaded;
+    dogImg.src = DOG_SPRITE;
+    dogImageRef.current = dogImg;
+
+    MOTO_SPRITES.forEach((src, index) => {
+      const img = new Image();
+      img.onload = checkAllLoaded;
+      img.onerror = checkAllLoaded;
+      img.src = src;
+      motoImagesRef.current[index] = img;
+    });
+
+    CITY_BACKGROUNDS.forEach((city) => {
+      const img = new Image();
+      img.onload = checkAllLoaded;
+      img.onerror = checkAllLoaded;
+      img.src = city.bg;
+      bgImagesRef.current.set(city.name, img);
+    });
+  }, []);
 
   const currentCity = CITY_BACKGROUNDS[(game.phase - 1) % CITY_BACKGROUNDS.length];
 
@@ -132,6 +180,7 @@ export default function GameCanvas() {
         y: -100,
         speed,
         type,
+        spriteIndex: Math.floor(Math.random() * MOTO_SPRITES.length),
         hit: false,
         exploding: false,
         explosionFrame: 0,
@@ -339,10 +388,14 @@ export default function GameCanvas() {
     const render = () => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      drawCityBackground(ctx, currentCity, scrollOffset.current);
+      const bgImage = bgImagesRef.current.get(currentCity.name);
+      drawCityBackground(ctx, currentCity, scrollOffset.current, bgImage);
       drawRoad(ctx, scrollOffset.current);
-      motorcycles.filter(m => !m.exploding).forEach((moto) => drawMotorcycle(ctx, moto));
-      drawPlayer(ctx, playerLane, isKicking);
+      motorcycles.filter(m => !m.exploding).forEach((moto) => {
+        const motoImg = motoImagesRef.current[moto.spriteIndex];
+        drawMotorcycle(ctx, moto, motoImg);
+      });
+      drawPlayer(ctx, playerLane, isKicking, dogImageRef.current);
       explosions.forEach((exp) => drawExplosion(ctx, exp));
       particles.forEach((p) => drawParticle(ctx, p));
       floatingTexts.forEach((ft) => drawFloatingText(ctx, ft, Date.now()));
@@ -352,7 +405,7 @@ export default function GameCanvas() {
     };
 
     render();
-  }, [motorcycles, explosions, particles, playerLane, isKicking, floatingTexts, currentCity]);
+  }, [motorcycles, explosions, particles, playerLane, isKicking, floatingTexts, currentCity, imagesLoaded]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-melonary-darker to-melonary-dark p-4">
@@ -393,99 +446,36 @@ export default function GameCanvas() {
   );
 }
 
-function drawCityBackground(ctx: CanvasRenderingContext2D, city: typeof CITY_BACKGROUNDS[0], scroll: number) {
-  const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  gradient.addColorStop(0, city.colors[0]);
-  gradient.addColorStop(0.5, city.colors[1]);
-  gradient.addColorStop(1, city.colors[2]);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
-  for (let i = 0; i < 50; i++) {
-    const x = (i * 47 + scroll) % CANVAS_WIDTH;
-    const y = (i * 31) % 200;
-    ctx.fillRect(x, y, 2, 2);
-  }
-
-  drawLandmarks(ctx, city.landmarks);
-  drawBuildings(ctx);
-}
-
-function drawLandmarks(ctx: CanvasRenderingContext2D, type: string) {
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-  ctx.lineWidth = 2;
-
-  switch (type) {
-    case 'cristo':
-      ctx.beginPath();
-      ctx.moveTo(350, 80);
-      ctx.lineTo(350, 40);
-      ctx.lineTo(320, 55);
-      ctx.moveTo(350, 40);
-      ctx.lineTo(380, 55);
-      ctx.stroke();
-      break;
-    case 'empire':
-      ctx.fillRect(340, 30, 30, 100);
-      ctx.fillRect(348, 10, 14, 20);
-      break;
-    case 'tower':
-      ctx.beginPath();
-      ctx.moveTo(360, 120);
-      ctx.lineTo(340, 120);
-      ctx.lineTo(350, 20);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-      ctx.fillRect(345, 25, 10, 15);
-      break;
-    case 'eiffel':
-      ctx.beginPath();
-      ctx.moveTo(350, 120);
-      ctx.lineTo(330, 120);
-      ctx.lineTo(340, 20);
-      ctx.lineTo(350, 20);
-      ctx.lineTo(360, 120);
-      ctx.closePath();
-      ctx.stroke();
-      break;
-    case 'burj':
-      ctx.fillRect(355, 10, 10, 130);
-      ctx.beginPath();
-      ctx.moveTo(360, 10);
-      ctx.lineTo(355, 25);
-      ctx.lineTo(365, 25);
-      ctx.closePath();
-      ctx.fill();
-      break;
-    case 'hollywood':
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.font = '12px Arial';
-      ctx.fillText('HOLLYWOOD', 300, 60);
-      break;
-  }
-}
-
-function drawBuildings(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-  
-  for (let i = 0; i < 8; i++) {
-    const x = i * 55 - 10;
-    const height = 80 + Math.sin(i * 1.5) * 40;
-    const width = 40 + Math.cos(i) * 10;
-    ctx.fillRect(x, 150 - height, width, height);
+function drawCityBackground(ctx: CanvasRenderingContext2D, _city: typeof CITY_BACKGROUNDS[0], _scroll: number, bgImage?: HTMLImageElement | null) {
+  if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
+    const aspectRatio = bgImage.naturalWidth / bgImage.naturalHeight;
+    const canvasAspect = CANVAS_WIDTH / CANVAS_HEIGHT;
     
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
-    for (let w = 0; w < 3; w++) {
-      for (let h = 0; h < 5; h++) {
-        if (Math.random() > 0.3) {
-          ctx.fillRect(x + 5 + w * 12, 155 - height + h * 15, 6, 8);
-        }
-      }
+    let drawWidth, drawHeight, offsetX, offsetY;
+    
+    if (aspectRatio > canvasAspect) {
+      drawHeight = CANVAS_HEIGHT;
+      drawWidth = drawHeight * aspectRatio;
+      offsetX = -(drawWidth - CANVAS_WIDTH) / 2;
+      offsetY = 0;
+    } else {
+      drawWidth = CANVAS_WIDTH;
+      drawHeight = drawWidth / aspectRatio;
+      offsetX = 0;
+      offsetY = -(drawHeight - CANVAS_HEIGHT) / 2;
     }
+    
+    ctx.drawImage(bgImage, offsetX, offsetY, drawWidth, drawHeight);
+    
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    gradient.addColorStop(0, '#1a0a2e');
+    gradient.addColorStop(0.5, '#2d1b4e');
+    gradient.addColorStop(1, '#4a2c6e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }
 }
 
@@ -523,59 +513,49 @@ function drawRoad(ctx: CanvasRenderingContext2D, scroll: number) {
   }
 }
 
-function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle) {
+function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle, motoImage?: HTMLImageElement | null) {
   const x = (CANVAS_WIDTH / LANE_COUNT) * moto.lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
   const y = moto.y;
 
-  const scale = 0.4 + (y / CANVAS_HEIGHT) * 0.6;
-  const width = 50 * scale;
-  const height = 70 * scale;
+  const scale = 0.3 + (y / CANVAS_HEIGHT) * 0.7;
+  const width = 80 * scale;
+  const height = 100 * scale;
 
-  const colors = {
-    normal: { body: '#333', accent: '#666', light: '#888' },
-    fast: { body: '#8B0000', accent: '#FF4500', light: '#FF6347' },
-    armored: { body: '#2F4F4F', accent: '#708090', light: '#778899' },
-  };
-  const color = colors[moto.type];
+  if (motoImage && motoImage.complete && motoImage.naturalWidth > 0) {
+    ctx.save();
+    ctx.drawImage(
+      motoImage,
+      x - width / 2,
+      y - height / 2,
+      width,
+      height
+    );
+    ctx.restore();
+  } else {
+    const colors = {
+      normal: { body: '#333', accent: '#666' },
+      fast: { body: '#8B0000', accent: '#FF4500' },
+      armored: { body: '#2F4F4F', accent: '#708090' },
+    };
+    const color = colors[moto.type];
 
-  ctx.fillStyle = color.body;
-  ctx.beginPath();
-  ctx.ellipse(x, y, width / 2, height / 3, 0, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = color.body;
+    ctx.beginPath();
+    ctx.ellipse(x, y, width / 2, height / 3, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = '#111';
-  ctx.beginPath();
-  ctx.ellipse(x - width / 4, y + height / 4, width / 5, width / 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(x + width / 4, y + height / 4, width / 5, width / 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = color.accent;
-  ctx.beginPath();
-  ctx.arc(x, y - height / 3, width / 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#222';
-  ctx.beginPath();
-  ctx.ellipse(x, y - height / 2.3, width / 3, width / 5, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FF0000';
-  ctx.shadowColor = '#FF0000';
-  ctx.shadowBlur = 10;
-  ctx.beginPath();
-  ctx.ellipse(x - width / 5, y + height / 2.2, width / 8, width / 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(x + width / 5, y + height / 2.2, width / 8, width / 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
+    ctx.fillStyle = color.accent;
+    ctx.beginPath();
+    ctx.arc(x, y - height / 3, width / 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
-function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: boolean) {
+function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: boolean, dogImage?: HTMLImageElement | null) {
   const x = (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
   const y = CANVAS_HEIGHT - 120;
+  const width = 90;
+  const height = 110;
 
   ctx.save();
 
@@ -585,50 +565,35 @@ function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, isKicking: bool
     ctx.translate(-x, -y);
   }
 
-  ctx.fillStyle = '#D2691E';
-  ctx.beginPath();
-  ctx.ellipse(x, y, 35, 45, 0, 0, Math.PI * 2);
-  ctx.fill();
+  if (dogImage && dogImage.complete && dogImage.naturalWidth > 0) {
+    ctx.drawImage(
+      dogImage,
+      x - width / 2,
+      y - height / 2,
+      width,
+      height
+    );
+  } else {
+    ctx.fillStyle = '#D2691E';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 35, 45, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = '#FFD700';
-  ctx.beginPath();
-  ctx.ellipse(x, y + 5, 30, 38, 0, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 5, 30, 38, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = '#D2691E';
-  ctx.beginPath();
-  ctx.ellipse(x, y - 50, 28, 25, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#FFD700';
-  ctx.beginPath();
-  ctx.ellipse(x, y - 48, 24, 21, 0, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = '#D2691E';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 50, 28, 25, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  ctx.fillStyle = '#D2691E';
-  ctx.beginPath();
-  ctx.ellipse(x - 20, y - 65, 8, 12, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(x + 20, y - 65, 8, 12, 0.3, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(x - 18, y - 55, 12, 6);
-  ctx.fillRect(x + 6, y - 55, 12, 6);
-  
-  ctx.fillStyle = '#1a1a2e';
-  ctx.beginPath();
-  ctx.ellipse(x, y - 42, 6, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (isKicking) {
+  if (isKicking && (!dogImage || !dogImage.complete)) {
     ctx.fillStyle = '#D2691E';
     ctx.beginPath();
     ctx.ellipse(x + 45, y - 35, 12, 25, 0.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.ellipse(x + 47, y - 33, 10, 20, 0.8, 0, Math.PI * 2);
     ctx.fill();
   }
 
