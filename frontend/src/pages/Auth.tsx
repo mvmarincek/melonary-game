@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
+import TokenFooter from '../components/TokenFooter';
 
 type AuthMode = 'login' | 'register';
 
@@ -257,6 +258,7 @@ export default function Auth() {
           </div>
         </div>
       </div>
+      <TokenFooter />
     </div>
   );
 }

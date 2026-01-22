@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { t } from '../i18n/translations';
+import TokenFooter from '../components/TokenFooter';
 
 export default function Home() {
   const { user, language, logout } = useStore();
@@ -113,6 +114,9 @@ export default function Home() {
           <span>Voadora</span>
         </div>
       </div>
+
+      <div className="h-24"></div>
+      <TokenFooter />
     </div>
   );
 }

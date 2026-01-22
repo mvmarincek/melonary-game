@@ -7,6 +7,7 @@ import GameCanvas from './GameCanvas';
 import GameUI from './GameUI';
 import GameOver from './GameOver';
 import { t } from '../i18n/translations';
+import TokenFooter from '../components/TokenFooter';
 
 interface GameResults {
   finalScore: number;
@@ -130,6 +131,7 @@ export default function Game() {
             </button>
           </div>
         </div>
+        <TokenFooter />
       </div>
     );
   }

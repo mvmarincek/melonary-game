@@ -4,6 +4,7 @@ import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
 import { audioManager } from '../services/audio';
+import TokenFooter from '../components/TokenFooter';
 
 export default function Settings() {
   const {
@@ -169,7 +170,10 @@ export default function Settings() {
             </div>
           </div>
         )}
+
+        <div className="h-24"></div>
       </div>
+      <TokenFooter />
     </div>
   );
 }

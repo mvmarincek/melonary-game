@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t } from '../i18n/translations';
+import TokenFooter from '../components/TokenFooter';
 
 interface RankingEntry {
   position: number;
@@ -126,7 +127,10 @@ export default function Ranking() {
             </div>
           )}
         </div>
+
+        <div className="h-24"></div>
       </div>
+      <TokenFooter />
     </div>
   );
 }
