@@ -36,7 +36,7 @@ class AudioManager {
     this.sfxVolume = volume;
   }
 
-  playMusic(track: 'menu' | 'game') {
+  playMusic(_track: 'menu' | 'game') {
     if (!this.enabled) return;
     
     if (this.bgMusic) {

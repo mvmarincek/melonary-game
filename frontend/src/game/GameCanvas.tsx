@@ -24,10 +24,10 @@ interface FloatingText {
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { user, language, game, setGameState, soundEnabled, sfxVolume } = useStore();
+  const { language, game, setGameState } = useStore();
   const [enemies, setEnemies] = useState<Enemy[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [melonaryY, setMelonaryY] = useState(0);
+  const [, setMelonaryY] = useState(0);
   const [isKicking, setIsKicking] = useState(false);
   const lastSpawnRef = useRef(0);
   const enemyIdRef = useRef(0);

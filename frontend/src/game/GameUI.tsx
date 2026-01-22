@@ -3,10 +3,10 @@ import { t } from '../i18n/translations';
 
 interface GameUIProps {
   onPause: () => void;
-  onQuit: () => void;
+  onQuit?: () => void;
 }
 
-export default function GameUI({ onPause, onQuit }: GameUIProps) {
+export default function GameUI({ onPause }: GameUIProps) {
   const { game, language } = useStore();
 
   return (
