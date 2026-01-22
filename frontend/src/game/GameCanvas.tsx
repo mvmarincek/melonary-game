@@ -37,7 +37,7 @@ const playScream = () => {
 
 interface Motorcycle {
   id: number;
-  lane: number;
+  lane: 0 | 1;
   y: number;
   speed: number;
   isFat: boolean;
@@ -52,9 +52,12 @@ interface FloatingText {
   frame: number;
 }
 
-const LANE_COUNT = 5;
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
+const LANE_LEFT_X = 130;
+const LANE_RIGHT_X = 270;
+const MOTO_SIZE = 65;
+const DOG_SIZE = 70;
 
 const CITIES = [
   { name: 'Rio de Janeiro', bg: '/assets/road-rio.png' },
@@ -70,8 +73,8 @@ export default function GameCanvas() {
   const { game, setGameState } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [texts, setTexts] = useState<FloatingText[]>([]);
-  const [playerLane, setPlayerLane] = useState(2);
-  const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 150);
+  const [playerX, setPlayerX] = useState(CANVAS_WIDTH / 2);
+  const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 120);
   const [facingRight, setFacingRight] = useState(true);
   const [isKicking, setIsKicking] = useState(false);
   const [kickCooldown, setKickCooldown] = useState(false);
@@ -79,7 +82,6 @@ export default function GameCanvas() {
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
   const textIdRef = useRef(0);
-  const scrollRef = useRef(0);
   const transitionRef = useRef(0);
   const prevCityRef = useRef(0);
   
@@ -111,30 +113,24 @@ export default function GameCanvas() {
   const currentCityIndex = (game.phase - 1) % CITIES.length;
   const currentCity = CITIES[currentCityIndex];
 
-  const getLaneX = (lane: number) => (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
+  const getLaneX = (lane: 0 | 1) => lane === 0 ? LANE_LEFT_X : LANE_RIGHT_X;
 
   const spawnMotorcycle = useCallback(() => {
-    const maxMotos = Math.min(1 + Math.floor(game.phase / 2), 3);
-    const count = Math.floor(Math.random() * maxMotos) + 1;
-    const usedLanes: number[] = [];
-
-    for (let i = 0; i < count; i++) {
-      let lane: number;
-      do { lane = Math.floor(Math.random() * LANE_COUNT); } while (usedLanes.includes(lane));
-      usedLanes.push(lane);
-
-      const isFat = Math.random() > 0.5;
-      const baseSpeed = 2 + game.phase * 0.25;
-      
-      setMotorcycles(prev => [...prev, {
-        id: motoIdRef.current++,
-        lane,
-        y: -80,
-        speed: isFat ? baseSpeed * 0.85 : baseSpeed,
-        isFat,
-        hit: false,
-      }]);
-    }
+    const lane: 0 | 1 = Math.random() > 0.5 ? 0 : 1;
+    const isFat = Math.random() > 0.5;
+    const baseSpeed = 2.5 + game.phase * 0.2;
+    const speed = isFat ? baseSpeed * 0.85 : baseSpeed;
+    
+    const startY = lane === 0 ? -60 : CANVAS_HEIGHT + 60;
+    
+    setMotorcycles(prev => [...prev, {
+      id: motoIdRef.current++,
+      lane,
+      y: startY,
+      speed: lane === 0 ? speed : -speed,
+      isFat,
+      hit: false,
+    }]);
   }, [game.phase]);
 
   const handleKick = useCallback(() => {
@@ -142,8 +138,6 @@ export default function GameCanvas() {
 
     setIsKicking(true);
     setKickCooldown(true);
-
-    const playerX = getLaneX(playerLane);
 
     setMotorcycles(prev => {
       let newScore = game.score;
@@ -155,7 +149,7 @@ export default function GameCanvas() {
         const motoX = getLaneX(m.lane);
         const dist = Math.sqrt((motoX - playerX) ** 2 + (m.y - playerY) ** 2);
 
-        if (dist < 70) {
+        if (dist < 60) {
           hitAny = true;
           newCombo++;
           const points = 100 * newCombo;
@@ -174,16 +168,24 @@ export default function GameCanvas() {
 
     setTimeout(() => setIsKicking(false), 150);
     setTimeout(() => setKickCooldown(false), 300);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, setGameState]);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerX, playerY, setGameState]);
 
   const movePlayer = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
     if (!game.isPlaying || game.isPaused) return;
     playBark();
 
-    if (dir === 'left') { setPlayerLane(p => Math.max(0, p - 1)); setFacingRight(false); }
-    else if (dir === 'right') { setPlayerLane(p => Math.min(LANE_COUNT - 1, p + 1)); setFacingRight(true); }
-    else if (dir === 'up') setPlayerY(p => Math.max(80, p - 40));
-    else if (dir === 'down') setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + 40));
+    const step = 30;
+    if (dir === 'left') {
+      setPlayerX(p => Math.max(40, p - step));
+      setFacingRight(false);
+    } else if (dir === 'right') {
+      setPlayerX(p => Math.min(CANVAS_WIDTH - 40, p + step));
+      setFacingRight(true);
+    } else if (dir === 'up') {
+      setPlayerY(p => Math.max(60, p - step));
+    } else if (dir === 'down') {
+      setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + step));
+    }
   }, [game.isPlaying, game.isPaused]);
 
   useEffect(() => {
@@ -221,7 +223,6 @@ export default function GameCanvas() {
     let animId: number;
     const loop = () => {
       const now = Date.now();
-      scrollRef.current = (scrollRef.current + 2) % 1000;
 
       if (prevCityRef.current !== currentCityIndex) {
         transitionRef.current = 1;
@@ -229,16 +230,28 @@ export default function GameCanvas() {
       }
       if (transitionRef.current > 0) transitionRef.current -= 0.02;
 
-      const interval = Math.max(1200 - game.phase * 80, 500);
+      const interval = Math.max(1000 - game.phase * 60, 400);
       if (now - lastSpawnRef.current > interval) {
         spawnMotorcycle();
         lastSpawnRef.current = now;
       }
 
       setMotorcycles(prev => {
-        const updated = prev.map(m => ({ ...m, y: m.y + m.speed })).filter(m => m.y < CANVAS_HEIGHT + 50 && !m.hit);
-        const missed = prev.filter(m => m.y >= CANVAS_HEIGHT && !m.hit);
+        const updated = prev
+          .map(m => ({ ...m, y: m.y + m.speed }))
+          .filter(m => {
+            if (m.hit) return false;
+            if (m.lane === 0) return m.y < CANVAS_HEIGHT + 80;
+            return m.y > -80;
+          });
+        
+        const missed = prev.filter(m => {
+          if (m.hit) return false;
+          if (m.lane === 0) return m.y >= CANVAS_HEIGHT + 80;
+          return m.y <= -80;
+        });
         if (missed.length > 0) setGameState({ combo: 0 });
+        
         return updated;
       });
 
@@ -262,58 +275,77 @@ export default function GameCanvas() {
 
       const bgImg = bgImgs.current[currentCityIndex];
       if (bgImg?.complete && bgImg.naturalWidth > 0) {
-        const h = (CANVAS_WIDTH / bgImg.naturalWidth) * bgImg.naturalHeight;
-        const y1 = (scrollRef.current % h) - h;
-        ctx.drawImage(bgImg, 0, y1, CANVAS_WIDTH, h);
-        ctx.drawImage(bgImg, 0, y1 + h, CANVAS_WIDTH, h);
-        if (y1 + h * 2 < CANVAS_HEIGHT) ctx.drawImage(bgImg, 0, y1 + h * 2, CANVAS_WIDTH, h);
+        ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       } else {
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
+      ctx.fillStyle = 'rgba(40, 40, 50, 0.85)';
+      ctx.fillRect(LANE_LEFT_X - 45, 0, 90, CANVAS_HEIGHT);
+      ctx.fillRect(LANE_RIGHT_X - 45, 0, 90, CANVAS_HEIGHT);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([20, 15]);
+      ctx.beginPath();
+      ctx.moveTo(LANE_LEFT_X, 0);
+      ctx.lineTo(LANE_LEFT_X, CANVAS_HEIGHT);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(LANE_RIGHT_X, 0);
+      ctx.lineTo(LANE_RIGHT_X, CANVAS_HEIGHT);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(255, 200, 0, 0.15)';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('↓', LANE_LEFT_X, 25);
+      ctx.fillText('↑', LANE_RIGHT_X, CANVAS_HEIGHT - 15);
+
       if (transitionRef.current > 0) {
-        ctx.fillStyle = `rgba(0,0,0,${transitionRef.current * 0.5})`;
+        ctx.fillStyle = `rgba(0,0,0,${transitionRef.current * 0.6})`;
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      const laneW = CANVAS_WIDTH / LANE_COUNT;
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([15, 10]);
-      for (let i = 1; i < LANE_COUNT; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * laneW, 0);
-        ctx.lineTo(i * laneW, CANVAS_HEIGHT);
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-
       motorcycles.forEach(m => {
         const x = getLaneX(m.lane);
-        const scale = 0.35 + (m.y / CANVAS_HEIGHT) * 0.45;
-        const w = 60 * scale, h = 75 * scale;
+        let scale: number;
+        if (m.lane === 0) {
+          scale = 0.6 + (m.y / CANVAS_HEIGHT) * 0.5;
+        } else {
+          scale = 1.1 - (m.y / CANVAS_HEIGHT) * 0.5;
+        }
+        const size = MOTO_SIZE * scale;
         const img = m.isFat ? motoFatImg.current : motoThinImg.current;
-        if (img?.complete) ctx.drawImage(img, x - w / 2, m.y - h / 2, w, h);
-        else {
+        
+        ctx.save();
+        ctx.translate(x, m.y);
+        if (m.lane === 1) {
+          ctx.rotate(Math.PI);
+        }
+        if (img?.complete) {
+          ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        } else {
           ctx.fillStyle = '#333';
           ctx.beginPath();
-          ctx.ellipse(x, m.y, w / 2.5, h / 2, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, size / 3, size / 2, 0, 0, Math.PI * 2);
           ctx.fill();
         }
+        ctx.restore();
       });
 
-      const px = getLaneX(playerLane);
       ctx.save();
-      ctx.translate(px, playerY);
+      ctx.translate(playerX, playerY);
       if (!facingRight) ctx.scale(-1, 1);
-      if (isKicking) ctx.rotate(0.25);
-      const pw = 70, ph = 85;
-      if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -pw / 2, -ph / 2, pw, ph);
-      else {
+      if (isKicking) ctx.rotate(0.3);
+      if (dogImg.current?.complete) {
+        ctx.drawImage(dogImg.current, -DOG_SIZE / 2, -DOG_SIZE / 2, DOG_SIZE, DOG_SIZE);
+      } else {
         ctx.fillStyle = '#D2691E';
         ctx.beginPath();
-        ctx.ellipse(0, 0, 25, 35, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 25, 30, 0, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -323,35 +355,35 @@ export default function GameCanvas() {
         const yOff = t.frame * 1.5;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 16px Arial';
+        ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(t.text, t.x, t.y - yOff);
         ctx.globalAlpha = 1;
       });
 
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(0, 0, CANVAS_WIDTH, 40);
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, 45);
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 11px Arial';
+      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(currentCity.name, 8, 16);
+      ctx.fillText(currentCity.name, 10, 18);
       ctx.fillStyle = '#FFF';
-      ctx.fillText(`FASE ${game.phase}`, 8, 32);
+      ctx.fillText(`FASE ${game.phase}`, 10, 35);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 14px Arial';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 18);
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 10, 20);
       if (game.combo > 1) {
         ctx.fillStyle = '#FF6347';
-        ctx.font = 'bold 11px Arial';
-        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 8, 32);
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 10, 36);
       }
 
       animId = requestAnimationFrame(render);
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerLane, playerY, isKicking, facingRight, currentCityIndex, currentCity.name, game.score, game.combo, game.phase]);
+  }, [motorcycles, texts, playerX, playerY, isKicking, facingRight, currentCityIndex, currentCity.name, game.score, game.combo, game.phase]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-melonary-dark p-2">
