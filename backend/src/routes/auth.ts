@@ -22,6 +22,11 @@ const loginSchema = z.object({
   password: z.string()
 });
 
+function signToken(userId: string): string {
+  const secret = process.env.JWT_SECRET || 'fallback-secret';
+  return jwt.sign({ userId }, secret, { expiresIn: 604800 });
+}
+
 router.post('/register', authLimiter, async (req, res) => {
   try {
     const data = registerSchema.parse(req.body);
@@ -36,13 +41,17 @@ router.post('/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'auth.username_exists' });
     }
     
-    const user = await createUser(data);
+    const user = await createUser({
+      name: data.name,
+      email: data.email,
+      username: data.username,
+      password: data.password,
+      language: data.language,
+      x_username: data.x_username,
+      tiktok_username: data.tiktok_username
+    });
     
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    const token = signToken(user.id);
     
     res.status(201).json({
       user: {
@@ -84,11 +93,7 @@ router.post('/login', authLimiter, async (req, res) => {
     
     await updateLastLogin(user.id);
     
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    const token = signToken(user.id);
     
     res.json({
       user: {

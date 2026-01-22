@@ -40,7 +40,7 @@ router.post('/generate-prompt', async (req: AuthRequest, res: Response) => {
         prompt = artDirector.generateBasePrompt('enemy');
         break;
       default:
-        prompt = artDirector.generateBasePrompt(request.type);
+        prompt = artDirector.generateBasePrompt('character');
     }
     
     const validation = artDirector.validateStyle(prompt);
