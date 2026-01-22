@@ -58,16 +58,40 @@ const LANE_LEFT_X = 145;
 const LANE_RIGHT_X = 255;
 const SPRITE_SIZE = 60;
 
-const PHASE_GOALS = [500, 1200, 2000, 3000, 4500, 6500];
-
 const CITIES = [
-  { name: 'Rio de Janeiro', bg: '/assets/road-rio.png' },
-  { name: 'New York', bg: '/assets/road-newyork.png' },
-  { name: 'Tokyo', bg: '/assets/road-tokyo.png' },
-  { name: 'Paris', bg: '/assets/road-paris.png' },
-  { name: 'Dubai', bg: '/assets/road-dubai.png' },
-  { name: 'Los Angeles', bg: '/assets/road-losangeles.png' },
+  'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
+  'London', 'Sydney', 'Rome', 'Barcelona', 'Berlin', 'Amsterdam',
+  'Toronto', 'Vancouver', 'Miami', 'Chicago', 'San Francisco', 'Las Vegas',
+  'Moscow', 'Beijing', 'Shanghai', 'Hong Kong', 'Singapore', 'Bangkok',
+  'Seoul', 'Mumbai', 'Delhi', 'Cairo', 'Cape Town', 'Johannesburg',
+  'Buenos Aires', 'Sao Paulo', 'Mexico City', 'Lima', 'Bogota', 'Santiago',
+  'Vienna', 'Prague', 'Budapest', 'Warsaw', 'Stockholm', 'Oslo',
+  'Copenhagen', 'Helsinki', 'Dublin', 'Edinburgh', 'Manchester', 'Liverpool',
+  'Milan', 'Florence', 'Venice', 'Naples', 'Madrid', 'Valencia',
+  'Lisbon', 'Porto', 'Athens', 'Istanbul', 'Marrakech', 'Casablanca',
+  'Tel Aviv', 'Jerusalem', 'Doha', 'Abu Dhabi', 'Riyadh', 'Kuwait City',
+  'Kuala Lumpur', 'Jakarta', 'Manila', 'Ho Chi Minh', 'Hanoi', 'Taipei',
+  'Osaka', 'Kyoto', 'Nagoya', 'Fukuoka', 'Sapporo', 'Busan',
+  'Melbourne', 'Brisbane', 'Perth', 'Auckland', 'Wellington', 'Queenstown',
+  'Havana', 'San Juan', 'Kingston', 'Nassau', 'Cancun', 'Acapulco',
+  'Cartagena', 'Medellin', 'Quito', 'La Paz', 'Montevideo', 'Asuncion',
+  'Reykjavik', 'Monaco', 'Luxembourg', 'Zurich', 'Geneva', 'Brussels'
 ];
+
+const CITY_BACKGROUNDS = [
+  '/assets/road-rio.png',
+  '/assets/road-newyork.png', 
+  '/assets/road-tokyo.png',
+  '/assets/road-paris.png',
+  '/assets/road-dubai.png',
+  '/assets/road-losangeles.png'
+];
+
+const getPhaseGoal = (phase: number) => {
+  const base = 300;
+  const increment = 150;
+  return base + (phase - 1) * increment + Math.floor((phase - 1) / 5) * 100;
+};
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -79,16 +103,17 @@ export default function GameCanvas() {
   const [isJumping, setIsJumping] = useState(false);
   const [jumpFrame, setJumpFrame] = useState(0);
   const [kickCooldown, setKickCooldown] = useState(false);
+  const [phaseScore, setPhaseScore] = useState(0);
   
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
   const textIdRef = useRef(0);
-  const phaseScoreRef = useRef(0);
   
   const dogImg = useRef<HTMLImageElement | null>(null);
   const motoThinImg = useRef<HTMLImageElement | null>(null);
   const motoFatImg = useRef<HTMLImageElement | null>(null);
   const bgImgs = useRef<HTMLImageElement[]>([]);
+  const muralImg = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     const dog = new Image();
@@ -103,23 +128,28 @@ export default function GameCanvas() {
     fat.src = '/assets/moto-fat-final.png';
     motoFatImg.current = fat;
 
-    CITIES.forEach((city, i) => {
+    const mural = new Image();
+    mural.src = '/assets/mural-bg.jpg';
+    muralImg.current = mural;
+
+    CITY_BACKGROUNDS.forEach((bg, i) => {
       const img = new Image();
-      img.src = city.bg;
+      img.src = bg;
       bgImgs.current[i] = img;
     });
   }, []);
 
   const currentCityIndex = (game.phase - 1) % CITIES.length;
   const currentCity = CITIES[currentCityIndex];
-  const phaseGoal = PHASE_GOALS[Math.min(game.phase - 1, PHASE_GOALS.length - 1)];
+  const currentBgIndex = (game.phase - 1) % CITY_BACKGROUNDS.length;
+  const phaseGoal = getPhaseGoal(game.phase);
 
   const getLaneX = (lane: 0 | 1) => lane === 0 ? LANE_LEFT_X : LANE_RIGHT_X;
 
   const spawnMotorcycle = useCallback(() => {
     const lane: 0 | 1 = Math.random() > 0.5 ? 0 : 1;
     const isFat = Math.random() > 0.5;
-    const baseSpeed = 3 + game.phase * 0.3;
+    const baseSpeed = 3 + game.phase * 0.15;
     const speed = isFat ? baseSpeed * 0.8 : baseSpeed;
     
     const startY = lane === 0 ? -50 : CANVAS_HEIGHT + 50;
@@ -148,6 +178,7 @@ export default function GameCanvas() {
       let newScore = game.score;
       let newCombo = game.combo;
       let hitAny = false;
+      let pointsEarned = 0;
 
       const updated = prev.map(m => {
         if (m.hit) return m;
@@ -160,7 +191,7 @@ export default function GameCanvas() {
           newCombo++;
           const points = 100 * newCombo;
           newScore += points;
-          phaseScoreRef.current += points;
+          pointsEarned += points;
           playScream();
           
           setTexts(t => [...t, { id: textIdRef.current++, x: playerX, y: m.y, text: `+${points}`, frame: 0 }]);
@@ -172,9 +203,12 @@ export default function GameCanvas() {
       if (hitAny) {
         setGameState({ score: newScore, combo: newCombo });
         
-        if (phaseScoreRef.current >= phaseGoal) {
-          phaseScoreRef.current = 0;
+        const newPhaseScore = phaseScore + pointsEarned;
+        if (newPhaseScore >= phaseGoal) {
+          setPhaseScore(0);
           setGameState({ phase: game.phase + 1 });
+        } else {
+          setPhaseScore(newPhaseScore);
         }
       }
       return updated;
@@ -184,7 +218,7 @@ export default function GameCanvas() {
       setIsJumping(false);
       setKickCooldown(false);
     }, 400);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, game.phase, playerLane, playerY, isJumping, phaseGoal, setGameState]);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, game.phase, playerLane, playerY, isJumping, phaseGoal, phaseScore, setGameState]);
 
   const switchLane = useCallback(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -242,7 +276,7 @@ export default function GameCanvas() {
     const loop = () => {
       const now = Date.now();
 
-      const interval = Math.max(800 - game.phase * 50, 350);
+      const interval = Math.max(700 - game.phase * 10, 300);
       if (now - lastSpawnRef.current > interval) {
         spawnMotorcycle();
         lastSpawnRef.current = now;
@@ -285,24 +319,30 @@ export default function GameCanvas() {
     const render = () => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      const bgImg = bgImgs.current[currentCityIndex];
-      if (bgImg?.complete && bgImg.naturalWidth > 0) {
-        ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      if (muralImg.current?.complete && muralImg.current.naturalWidth > 0) {
+        ctx.drawImage(muralImg.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       } else {
-        ctx.fillStyle = '#1a1a2e';
+        ctx.fillStyle = '#0a0a14';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      ctx.fillStyle = 'rgba(30, 30, 40, 0.7)';
-      ctx.fillRect(LANE_LEFT_X - 35, 50, 70, CANVAS_HEIGHT - 50);
-      ctx.fillRect(LANE_RIGHT_X - 35, 50, 70, CANVAS_HEIGHT - 50);
+      const bgImg = bgImgs.current[currentBgIndex];
+      if (bgImg?.complete && bgImg.naturalWidth > 0) {
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.fillStyle = 'rgba(30, 30, 40, 0.75)';
+      ctx.fillRect(LANE_LEFT_X - 35, 55, 70, CANVAS_HEIGHT - 55);
+      ctx.fillRect(LANE_RIGHT_X - 35, 55, 70, CANVAS_HEIGHT - 55);
 
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.lineWidth = 2;
       ctx.setLineDash([15, 10]);
       [LANE_LEFT_X, LANE_RIGHT_X].forEach(x => {
         ctx.beginPath();
-        ctx.moveTo(x, 50);
+        ctx.moveTo(x, 55);
         ctx.lineTo(x, CANVAS_HEIGHT);
         ctx.stroke();
       });
@@ -311,7 +351,7 @@ export default function GameCanvas() {
       ctx.fillStyle = 'rgba(255, 200, 0, 0.3)';
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('↓', LANE_LEFT_X, 70);
+      ctx.fillText('↓', LANE_LEFT_X, 75);
       ctx.fillText('↑', LANE_RIGHT_X, CANVAS_HEIGHT - 10);
 
       motorcycles.forEach(m => {
@@ -386,54 +426,55 @@ export default function GameCanvas() {
         ctx.globalAlpha = 1;
       });
 
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.fillRect(0, 0, CANVAS_WIDTH, 48);
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, 52);
       
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 11px Arial';
+      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(currentCity.name, 8, 15);
+      ctx.fillText(currentCity, 8, 16);
       ctx.fillStyle = '#FFF';
-      ctx.fillText(`FASE ${game.phase}`, 8, 30);
+      ctx.font = 'bold 10px Arial';
+      ctx.fillText(`FASE ${game.phase} de 100`, 8, 30);
       
-      ctx.fillStyle = '#888';
-      ctx.font = '9px Arial';
-      ctx.fillText(`Meta: ${phaseGoal}`, 8, 43);
-      
-      const progress = Math.min(phaseScoreRef.current / phaseGoal, 1);
-      ctx.fillStyle = '#333';
-      ctx.fillRect(80, 38, 80, 8);
       ctx.fillStyle = '#4CAF50';
-      ctx.fillRect(80, 38, 80 * progress, 8);
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(`${phaseScore} / ${phaseGoal}`, 8, 46);
+      
+      const progress = Math.min(phaseScore / phaseGoal, 1);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(100, 40, 90, 8);
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(100, 40, 90 * progress, 8);
       
       ctx.textAlign = 'right';
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 22);
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 24);
       if (game.combo > 1) {
         ctx.fillStyle = '#FF6347';
-        ctx.font = 'bold 11px Arial';
-        ctx.fillText(`x${game.combo} COMBO`, CANVAS_WIDTH - 8, 40);
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 8, 44);
       }
 
       animId = requestAnimationFrame(render);
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentCityIndex, currentCity.name, game.score, game.combo, game.phase, phaseGoal]);
+  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseGoal, phaseScore]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-melonary-dark p-2">
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-melonary-gold rounded-lg" style={{ maxWidth: '100%' }} />
+    <div className="flex flex-col items-center justify-center min-h-screen p-2" style={{ backgroundImage: 'url(/assets/mural-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-melonary-gold rounded-lg shadow-2xl" style={{ maxWidth: '100%' }} />
       <div className="flex gap-3 mt-3 md:hidden">
         <div className="flex flex-col gap-1">
-          <button onTouchStart={() => moveVertical('up')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
-          <button onTouchStart={() => moveVertical('down')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
+          <button onTouchStart={() => moveVertical('up')} className="w-12 h-12 bg-black/50 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
+          <button onTouchStart={() => moveVertical('down')} className="w-12 h-12 bg-black/50 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
         </div>
-        <button onTouchStart={switchLane} className="w-14 h-14 bg-melonary-gold/20 border border-melonary-gold rounded text-sm text-melonary-gold self-center">TROCA<br/>PISTA</button>
+        <button onTouchStart={switchLane} className="w-14 h-14 bg-black/50 border border-melonary-gold rounded text-sm text-melonary-gold self-center">TROCA<br/>PISTA</button>
         <button onTouchStart={() => handleKick()} className="w-16 h-16 bg-melonary-gold border border-melonary-amber rounded-full text-sm font-bold text-melonary-dark self-center">CHUTE!</button>
       </div>
-      <p className="mt-2 text-gray-500 text-xs">←→ troca pista | ↑↓ move | ESPACO = chute voador</p>
+      <p className="mt-2 text-white/70 text-xs bg-black/50 px-2 py-1 rounded">←→ troca pista | ↑↓ move | ESPACO = chute voador</p>
     </div>
   );
 }
