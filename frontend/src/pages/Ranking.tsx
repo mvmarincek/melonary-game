@@ -37,87 +37,88 @@ export default function Ranking() {
   }, [tab]);
 
   return (
-    <div className="min-h-screen p-4 bg-gradient-to-b from-melonary-darker to-melonary-dark">
+    <div className="min-h-screen p-4" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Link to="/" className="text-melonary-gold hover:underline text-sm">
-            &larr; Back
+        <div className="flex items-center justify-between mb-8">
+          <Link to="/" className="text-yellow-500 hover:text-yellow-300 text-sm font-bold transition-colors">
+            &larr; Voltar
           </Link>
-          <h1 className="text-xl font-bold text-melonary-gold">
+          <h1 className="text-2xl font-black" style={{ color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.4)' }}>
             {t('menu.ranking', language)}
           </h1>
           <div className="w-16"></div>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-3 mb-6">
           <button
             onClick={() => setTab('global')}
-            className={`flex-1 py-2 rounded-lg transition ${
+            className={`flex-1 py-3 rounded-xl font-bold transition-all duration-300 ${
               tab === 'global'
-                ? 'bg-melonary-gold text-melonary-dark'
-                : 'bg-melonary-dark text-gray-400 hover:text-melonary-gold'
+                ? 'text-black'
+                : 'text-yellow-400 border-2 border-yellow-500/30 hover:border-yellow-500/60'
             }`}
+            style={tab === 'global' ? { background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)' } : { background: 'rgba(0,0,0,0.4)' }}
           >
             {t('ranking.global', language)}
           </button>
           <button
             onClick={() => setTab('weekly')}
-            className={`flex-1 py-2 rounded-lg transition ${
+            className={`flex-1 py-3 rounded-xl font-bold transition-all duration-300 ${
               tab === 'weekly'
-                ? 'bg-melonary-gold text-melonary-dark'
-                : 'bg-melonary-dark text-gray-400 hover:text-melonary-gold'
+                ? 'text-black'
+                : 'text-yellow-400 border-2 border-yellow-500/30 hover:border-yellow-500/60'
             }`}
+            style={tab === 'weekly' ? { background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)' } : { background: 'rgba(0,0,0,0.4)' }}
           >
             {t('ranking.weekly', language)}
           </button>
         </div>
 
-        <div className="card">
+        <div className="rounded-2xl border-2 border-yellow-500/20 p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           {isLoading ? (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-12 text-yellow-500/60">
               {t('game.loading', language)}
             </div>
           ) : ranking.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              No players yet
+            <div className="text-center py-12 text-gray-500">
+              Nenhum jogador ainda
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="flex text-xs text-gray-400 px-2 pb-2 border-b border-melonary-gold/20">
-                <div className="w-12">{t('ranking.position', language)}</div>
-                <div className="flex-1">{t('ranking.player', language)}</div>
-                <div className="w-24 text-right">{t('ranking.score', language)}</div>
+              <div className="flex text-xs text-gray-500 px-3 pb-3 border-b border-yellow-500/20">
+                <div className="w-14">#</div>
+                <div className="flex-1">Jogador</div>
+                <div className="w-28 text-right">Pontos</div>
               </div>
 
               {ranking.map((entry) => (
                 <div
                   key={entry.user_id}
-                  className={`flex items-center px-2 py-2 rounded-lg ${
+                  className={`flex items-center px-3 py-3 rounded-xl transition-all duration-200 ${
                     entry.user_id === user?.id
-                      ? 'bg-melonary-gold/20 border border-melonary-gold/50'
-                      : 'hover:bg-melonary-dark/50'
+                      ? 'border-2 border-yellow-500/50'
+                      : 'hover:bg-white/5'
                   }`}
+                  style={entry.user_id === user?.id ? { background: 'rgba(255, 215, 0, 0.1)' } : {}}
                 >
-                  <div className="w-12 font-bold">
-                    {entry.position <= 3 ? (
-                      <span className={
-                        entry.position === 1 ? 'text-yellow-400' :
-                        entry.position === 2 ? 'text-gray-300' :
-                        'text-amber-600'
-                      }>
-                        #{entry.position}
-                      </span>
+                  <div className="w-14 font-black text-lg">
+                    {entry.position === 1 ? (
+                      <span className="text-yellow-400" style={{ textShadow: '0 0 10px rgba(255, 215, 0, 0.6)' }}>1st</span>
+                    ) : entry.position === 2 ? (
+                      <span className="text-gray-300">2nd</span>
+                    ) : entry.position === 3 ? (
+                      <span className="text-orange-400">3rd</span>
                     ) : (
-                      <span className="text-gray-400">#{entry.position}</span>
+                      <span className="text-gray-500">{entry.position}</span>
                     )}
                   </div>
                   <div className="flex-1">
-                    <span className="text-white">{entry.username}</span>
+                    <span className="text-white font-bold">{entry.username}</span>
                     {entry.user_id === user?.id && (
-                      <span className="text-xs text-melonary-gold ml-2">(you)</span>
+                      <span className="text-xs text-yellow-500 ml-2">(voce)</span>
                     )}
                   </div>
-                  <div className="w-24 text-right font-bold text-melonary-gold">
+                  <div className="w-28 text-right font-black text-yellow-400">
                     {entry.score.toLocaleString()}
                   </div>
                 </div>

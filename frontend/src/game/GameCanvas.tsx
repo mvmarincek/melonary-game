@@ -466,17 +466,19 @@ export default function GameCanvas() {
   }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseGoal, phaseScore]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-2" style={{ backgroundImage: 'url(/assets/mural-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-melonary-gold rounded-lg shadow-2xl" style={{ maxWidth: '100%' }} />
-      <div className="flex gap-3 mt-3 md:hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen" style={{ background: '#0a0a0a' }}>
+      <div className="p-4 md:p-8 rounded-2xl" style={{ background: '#000', boxShadow: '0 0 60px rgba(255, 215, 0, 0.15)' }}>
+        <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-4 border-yellow-500/80 rounded-lg" style={{ maxWidth: '100%', boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)' }} />
+      <div className="flex gap-3 mt-4 md:hidden">
         <div className="flex flex-col gap-1">
-          <button onTouchStart={() => moveVertical('up')} className="w-12 h-12 bg-black/50 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
-          <button onTouchStart={() => moveVertical('down')} className="w-12 h-12 bg-black/50 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
+          <button onTouchStart={() => moveVertical('up')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↑</button>
+          <button onTouchStart={() => moveVertical('down')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↓</button>
         </div>
-        <button onTouchStart={switchLane} className="w-14 h-14 bg-black/50 border border-melonary-gold rounded text-sm text-melonary-gold self-center">TROCA<br/>PISTA</button>
-        <button onTouchStart={() => handleKick()} className="w-16 h-16 bg-melonary-gold border border-melonary-amber rounded-full text-sm font-bold text-melonary-dark self-center">CHUTE!</button>
+        <button onTouchStart={switchLane} className="w-16 h-16 bg-black border-2 border-yellow-500/60 rounded-lg text-xs text-yellow-500 self-center active:bg-yellow-500/20 font-bold">TROCA<br/>PISTA</button>
+        <button onTouchStart={() => handleKick()} className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full text-sm font-bold text-black self-center shadow-lg active:scale-95">CHUTE!</button>
       </div>
-      <p className="mt-2 text-white/70 text-xs bg-black/50 px-2 py-1 rounded">←→ troca pista | ↑↓ move | ESPACO = chute voador</p>
+      <p className="mt-4 text-white/70 text-xs bg-black/70 px-3 py-2 rounded-lg border border-yellow-500/30">ArrowKeys = mover | SPACE = chute voador</p>
+      </div>
     </div>
   );
 }
