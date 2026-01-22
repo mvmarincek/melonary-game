@@ -54,10 +54,11 @@ interface FloatingText {
 
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
-const LANE_LEFT_X = 130;
-const LANE_RIGHT_X = 270;
-const MOTO_SIZE = 65;
-const DOG_SIZE = 70;
+const LANE_LEFT_X = 145;
+const LANE_RIGHT_X = 255;
+const SPRITE_SIZE = 60;
+
+const PHASE_GOALS = [500, 1200, 2000, 3000, 4500, 6500];
 
 const CITIES = [
   { name: 'Rio de Janeiro', bg: '/assets/road-rio.png' },
@@ -73,17 +74,16 @@ export default function GameCanvas() {
   const { game, setGameState } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [texts, setTexts] = useState<FloatingText[]>([]);
-  const [playerX, setPlayerX] = useState(CANVAS_WIDTH / 2);
-  const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 120);
-  const [facingRight, setFacingRight] = useState(true);
-  const [isKicking, setIsKicking] = useState(false);
+  const [playerLane, setPlayerLane] = useState<0 | 1>(0);
+  const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 100);
+  const [isJumping, setIsJumping] = useState(false);
+  const [jumpFrame, setJumpFrame] = useState(0);
   const [kickCooldown, setKickCooldown] = useState(false);
   
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
   const textIdRef = useRef(0);
-  const transitionRef = useRef(0);
-  const prevCityRef = useRef(0);
+  const phaseScoreRef = useRef(0);
   
   const dogImg = useRef<HTMLImageElement | null>(null);
   const motoThinImg = useRef<HTMLImageElement | null>(null);
@@ -112,16 +112,17 @@ export default function GameCanvas() {
 
   const currentCityIndex = (game.phase - 1) % CITIES.length;
   const currentCity = CITIES[currentCityIndex];
+  const phaseGoal = PHASE_GOALS[Math.min(game.phase - 1, PHASE_GOALS.length - 1)];
 
   const getLaneX = (lane: 0 | 1) => lane === 0 ? LANE_LEFT_X : LANE_RIGHT_X;
 
   const spawnMotorcycle = useCallback(() => {
     const lane: 0 | 1 = Math.random() > 0.5 ? 0 : 1;
     const isFat = Math.random() > 0.5;
-    const baseSpeed = 2.5 + game.phase * 0.2;
-    const speed = isFat ? baseSpeed * 0.85 : baseSpeed;
+    const baseSpeed = 3 + game.phase * 0.3;
+    const speed = isFat ? baseSpeed * 0.8 : baseSpeed;
     
-    const startY = lane === 0 ? -60 : CANVAS_HEIGHT + 60;
+    const startY = lane === 0 ? -50 : CANVAS_HEIGHT + 50;
     
     setMotorcycles(prev => [...prev, {
       id: motoIdRef.current++,
@@ -134,10 +135,14 @@ export default function GameCanvas() {
   }, [game.phase]);
 
   const handleKick = useCallback(() => {
-    if (kickCooldown || !game.isPlaying || game.isPaused) return;
+    if (kickCooldown || !game.isPlaying || game.isPaused || isJumping) return;
 
-    setIsKicking(true);
+    setIsJumping(true);
+    setJumpFrame(0);
     setKickCooldown(true);
+    playBark();
+
+    const playerX = getLaneX(playerLane);
 
     setMotorcycles(prev => {
       let newScore = game.score;
@@ -146,61 +151,65 @@ export default function GameCanvas() {
 
       const updated = prev.map(m => {
         if (m.hit) return m;
-        const motoX = getLaneX(m.lane);
-        const dist = Math.sqrt((motoX - playerX) ** 2 + (m.y - playerY) ** 2);
+        if (m.lane !== playerLane) return m;
+        
+        const dist = Math.abs(m.y - playerY);
 
-        if (dist < 60) {
+        if (dist < 70) {
           hitAny = true;
           newCombo++;
           const points = 100 * newCombo;
           newScore += points;
+          phaseScoreRef.current += points;
           playScream();
           
-          setTexts(t => [...t, { id: textIdRef.current++, x: motoX, y: m.y, text: `+${points}`, frame: 0 }]);
+          setTexts(t => [...t, { id: textIdRef.current++, x: playerX, y: m.y, text: `+${points}`, frame: 0 }]);
           return { ...m, hit: true };
         }
         return m;
       });
 
-      if (hitAny) setGameState({ score: newScore, combo: newCombo });
+      if (hitAny) {
+        setGameState({ score: newScore, combo: newCombo });
+        
+        if (phaseScoreRef.current >= phaseGoal) {
+          phaseScoreRef.current = 0;
+          setGameState({ phase: game.phase + 1 });
+        }
+      }
       return updated;
     });
 
-    setTimeout(() => setIsKicking(false), 150);
-    setTimeout(() => setKickCooldown(false), 300);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerX, playerY, setGameState]);
+    setTimeout(() => {
+      setIsJumping(false);
+      setKickCooldown(false);
+    }, 400);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, game.phase, playerLane, playerY, isJumping, phaseGoal, setGameState]);
 
-  const movePlayer = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
+  const switchLane = useCallback(() => {
     if (!game.isPlaying || game.isPaused) return;
-    playBark();
+    setPlayerLane(prev => prev === 0 ? 1 : 0);
+  }, [game.isPlaying, game.isPaused]);
 
-    const step = 30;
-    if (dir === 'left') {
-      setPlayerX(p => Math.max(40, p - step));
-      setFacingRight(false);
-    } else if (dir === 'right') {
-      setPlayerX(p => Math.min(CANVAS_WIDTH - 40, p + step));
-      setFacingRight(true);
-    } else if (dir === 'up') {
-      setPlayerY(p => Math.max(60, p - step));
-    } else if (dir === 'down') {
-      setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + step));
-    }
+  const moveVertical = useCallback((dir: 'up' | 'down') => {
+    if (!game.isPlaying || game.isPaused) return;
+    const step = 40;
+    if (dir === 'up') setPlayerY(p => Math.max(80, p - step));
+    else setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + step));
   }, [game.isPlaying, game.isPaused]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!game.isPlaying) return;
-      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
-      else if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
-      else if (e.key === 'ArrowUp' || e.key === 'w') movePlayer('up');
-      else if (e.key === 'ArrowDown' || e.key === 's') movePlayer('down');
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ArrowRight' || e.key === 'd') switchLane();
+      else if (e.key === 'ArrowUp' || e.key === 'w') moveVertical('up');
+      else if (e.key === 'ArrowDown' || e.key === 's') moveVertical('down');
       else if (e.key === ' ') { e.preventDefault(); handleKick(); }
       else if (e.key === 'Escape') setGameState({ isPaused: !game.isPaused });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [game.isPlaying, game.isPaused, movePlayer, handleKick, setGameState]);
+  }, [game.isPlaying, game.isPaused, switchLane, moveVertical, handleKick, setGameState]);
 
   useEffect(() => {
     let startX = 0, startY = 0;
@@ -209,13 +218,22 @@ export default function GameCanvas() {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dx) < 25 && Math.abs(dy) < 25) handleKick();
-      else if (Math.abs(dx) > Math.abs(dy)) movePlayer(dx > 0 ? 'right' : 'left');
-      else movePlayer(dy > 0 ? 'down' : 'up');
+      else if (Math.abs(dx) > Math.abs(dy)) switchLane();
+      else moveVertical(dy > 0 ? 'down' : 'up');
     };
     window.addEventListener('touchstart', onStart);
     window.addEventListener('touchend', onEnd);
     return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd); };
-  }, [movePlayer, handleKick]);
+  }, [switchLane, moveVertical, handleKick]);
+
+  useEffect(() => {
+    if (isJumping) {
+      const interval = setInterval(() => {
+        setJumpFrame(f => f + 1);
+      }, 30);
+      return () => clearInterval(interval);
+    }
+  }, [isJumping]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -224,13 +242,7 @@ export default function GameCanvas() {
     const loop = () => {
       const now = Date.now();
 
-      if (prevCityRef.current !== currentCityIndex) {
-        transitionRef.current = 1;
-        prevCityRef.current = currentCityIndex;
-      }
-      if (transitionRef.current > 0) transitionRef.current -= 0.02;
-
-      const interval = Math.max(1000 - game.phase * 60, 400);
+      const interval = Math.max(800 - game.phase * 50, 350);
       if (now - lastSpawnRef.current > interval) {
         spawnMotorcycle();
         lastSpawnRef.current = now;
@@ -241,27 +253,27 @@ export default function GameCanvas() {
           .map(m => ({ ...m, y: m.y + m.speed }))
           .filter(m => {
             if (m.hit) return false;
-            if (m.lane === 0) return m.y < CANVAS_HEIGHT + 80;
-            return m.y > -80;
+            if (m.lane === 0) return m.y < CANVAS_HEIGHT + 60;
+            return m.y > -60;
           });
         
         const missed = prev.filter(m => {
           if (m.hit) return false;
-          if (m.lane === 0) return m.y >= CANVAS_HEIGHT + 80;
-          return m.y <= -80;
+          if (m.lane === 0) return m.y >= CANVAS_HEIGHT + 60;
+          return m.y <= -60;
         });
         if (missed.length > 0) setGameState({ combo: 0 });
         
         return updated;
       });
 
-      setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 30));
+      setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 25));
 
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [game.isPlaying, game.isPaused, game.phase, currentCityIndex, spawnMotorcycle, setGameState]);
+  }, [game.isPlaying, game.isPaused, game.phase, spawnMotorcycle, setGameState]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -281,123 +293,147 @@ export default function GameCanvas() {
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      ctx.fillStyle = 'rgba(40, 40, 50, 0.85)';
-      ctx.fillRect(LANE_LEFT_X - 45, 0, 90, CANVAS_HEIGHT);
-      ctx.fillRect(LANE_RIGHT_X - 45, 0, 90, CANVAS_HEIGHT);
+      ctx.fillStyle = 'rgba(30, 30, 40, 0.7)';
+      ctx.fillRect(LANE_LEFT_X - 35, 50, 70, CANVAS_HEIGHT - 50);
+      ctx.fillRect(LANE_RIGHT_X - 35, 50, 70, CANVAS_HEIGHT - 50);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.lineWidth = 2;
-      ctx.setLineDash([20, 15]);
-      ctx.beginPath();
-      ctx.moveTo(LANE_LEFT_X, 0);
-      ctx.lineTo(LANE_LEFT_X, CANVAS_HEIGHT);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(LANE_RIGHT_X, 0);
-      ctx.lineTo(LANE_RIGHT_X, CANVAS_HEIGHT);
-      ctx.stroke();
+      ctx.setLineDash([15, 10]);
+      [LANE_LEFT_X, LANE_RIGHT_X].forEach(x => {
+        ctx.beginPath();
+        ctx.moveTo(x, 50);
+        ctx.lineTo(x, CANVAS_HEIGHT);
+        ctx.stroke();
+      });
       ctx.setLineDash([]);
 
-      ctx.fillStyle = 'rgba(255, 200, 0, 0.15)';
-      ctx.font = '10px Arial';
+      ctx.fillStyle = 'rgba(255, 200, 0, 0.3)';
+      ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('↓', LANE_LEFT_X, 25);
-      ctx.fillText('↑', LANE_RIGHT_X, CANVAS_HEIGHT - 15);
-
-      if (transitionRef.current > 0) {
-        ctx.fillStyle = `rgba(0,0,0,${transitionRef.current * 0.6})`;
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      }
+      ctx.fillText('↓', LANE_LEFT_X, 70);
+      ctx.fillText('↑', LANE_RIGHT_X, CANVAS_HEIGHT - 10);
 
       motorcycles.forEach(m => {
         const x = getLaneX(m.lane);
         let scale: number;
         if (m.lane === 0) {
-          scale = 0.6 + (m.y / CANVAS_HEIGHT) * 0.5;
+          scale = 0.7 + (m.y / CANVAS_HEIGHT) * 0.4;
         } else {
-          scale = 1.1 - (m.y / CANVAS_HEIGHT) * 0.5;
+          scale = 1.1 - (m.y / CANVAS_HEIGHT) * 0.4;
         }
-        const size = MOTO_SIZE * scale;
+        const size = SPRITE_SIZE * scale;
         const img = m.isFat ? motoFatImg.current : motoThinImg.current;
         
         ctx.save();
         ctx.translate(x, m.y);
-        if (m.lane === 1) {
-          ctx.rotate(Math.PI);
-        }
+        if (m.lane === 1) ctx.rotate(Math.PI);
         if (img?.complete) {
           ctx.drawImage(img, -size / 2, -size / 2, size, size);
         } else {
-          ctx.fillStyle = '#333';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, size / 3, size / 2, 0, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillStyle = '#444';
+          ctx.fillRect(-size / 3, -size / 2, size / 1.5, size);
         }
         ctx.restore();
       });
 
+      const playerX = getLaneX(playerLane);
+      let drawY = playerY;
+      let rotation = 0;
+      
+      if (isJumping) {
+        const jumpProgress = jumpFrame / 12;
+        const jumpHeight = Math.sin(jumpProgress * Math.PI) * 50;
+        drawY = playerY - jumpHeight;
+        rotation = Math.sin(jumpProgress * Math.PI) * 0.5;
+      }
+
       ctx.save();
-      ctx.translate(playerX, playerY);
-      if (!facingRight) ctx.scale(-1, 1);
-      if (isKicking) ctx.rotate(0.3);
+      ctx.translate(playerX, drawY);
+      ctx.rotate(rotation);
+      if (playerLane === 1) ctx.scale(-1, 1);
+      
       if (dogImg.current?.complete) {
-        ctx.drawImage(dogImg.current, -DOG_SIZE / 2, -DOG_SIZE / 2, DOG_SIZE, DOG_SIZE);
+        ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
       } else {
         ctx.fillStyle = '#D2691E';
         ctx.beginPath();
         ctx.ellipse(0, 0, 25, 30, 0, 0, Math.PI * 2);
         ctx.fill();
       }
+      
+      if (isJumping && jumpFrame > 2 && jumpFrame < 10) {
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(20, -5);
+        ctx.lineTo(40, 0);
+        ctx.lineTo(20, 5);
+        ctx.closePath();
+        ctx.fill();
+      }
       ctx.restore();
 
       texts.forEach(t => {
-        const alpha = 1 - t.frame / 30;
-        const yOff = t.frame * 1.5;
+        const alpha = 1 - t.frame / 25;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 18px Arial';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(t.text, t.x, t.y - yOff);
+        ctx.strokeText(t.text, t.x, t.y - t.frame * 2);
+        ctx.fillText(t.text, t.x, t.y - t.frame * 2);
         ctx.globalAlpha = 1;
       });
 
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 0, CANVAS_WIDTH, 45);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, 48);
+      
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 12px Arial';
+      ctx.font = 'bold 11px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(currentCity.name, 10, 18);
+      ctx.fillText(currentCity.name, 8, 15);
       ctx.fillStyle = '#FFF';
-      ctx.fillText(`FASE ${game.phase}`, 10, 35);
+      ctx.fillText(`FASE ${game.phase}`, 8, 30);
+      
+      ctx.fillStyle = '#888';
+      ctx.font = '9px Arial';
+      ctx.fillText(`Meta: ${phaseGoal}`, 8, 43);
+      
+      const progress = Math.min(phaseScoreRef.current / phaseGoal, 1);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(80, 38, 80, 8);
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(80, 38, 80 * progress, 8);
+      
       ctx.textAlign = 'right';
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 16px Arial';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 10, 20);
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 22);
       if (game.combo > 1) {
         ctx.fillStyle = '#FF6347';
-        ctx.font = 'bold 12px Arial';
-        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 10, 36);
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText(`x${game.combo} COMBO`, CANVAS_WIDTH - 8, 40);
       }
 
       animId = requestAnimationFrame(render);
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerX, playerY, isKicking, facingRight, currentCityIndex, currentCity.name, game.score, game.combo, game.phase]);
+  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentCityIndex, currentCity.name, game.score, game.combo, game.phase, phaseGoal]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-melonary-dark p-2">
       <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-melonary-gold rounded-lg" style={{ maxWidth: '100%' }} />
-      <div className="flex gap-2 mt-3 md:hidden">
+      <div className="flex gap-3 mt-3 md:hidden">
         <div className="flex flex-col gap-1">
-          <button onTouchStart={() => movePlayer('up')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
-          <button onTouchStart={() => movePlayer('down')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
+          <button onTouchStart={() => moveVertical('up')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
+          <button onTouchStart={() => moveVertical('down')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
         </div>
-        <button onTouchStart={() => movePlayer('left')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold self-center">←</button>
-        <button onTouchStart={() => handleKick()} className="w-14 h-14 bg-melonary-gold border border-melonary-amber rounded-full text-xs font-bold text-melonary-dark self-center">KICK</button>
-        <button onTouchStart={() => movePlayer('right')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold self-center">→</button>
+        <button onTouchStart={switchLane} className="w-14 h-14 bg-melonary-gold/20 border border-melonary-gold rounded text-sm text-melonary-gold self-center">TROCA<br/>PISTA</button>
+        <button onTouchStart={() => handleKick()} className="w-16 h-16 bg-melonary-gold border border-melonary-amber rounded-full text-sm font-bold text-melonary-dark self-center">CHUTE!</button>
       </div>
-      <p className="mt-2 text-gray-500 text-xs">WASD/Setas = mover | Espaco = voadora</p>
+      <p className="mt-2 text-gray-500 text-xs">←→ troca pista | ↑↓ move | ESPACO = chute voador</p>
     </div>
   );
 }
