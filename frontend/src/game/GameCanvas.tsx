@@ -15,13 +15,40 @@ const playBark = () => {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(250, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.04);
-    osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    osc.frequency.setValueAtTime(280, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 0.03);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
+const playPunch = () => {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    const bufferSize = ctx.sampleRate * 0.15;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 25);
+      data[i] = (Math.random() * 2 - 1) * env * 0.6;
+      if (t < 0.02) data[i] += Math.sin(t * 150 * Math.PI * 2) * env * 0.4;
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.5;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(ctx.currentTime);
   } catch {}
 };
 
@@ -34,12 +61,33 @@ const playScream = () => {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.3);
+    osc.stop(ctx.currentTime + 0.25);
+  } catch {}
+};
+
+const playHowl = () => {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.2);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.6);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.7);
   } catch {}
 };
 
@@ -122,15 +170,12 @@ export default function GameCanvas() {
     const dog = new Image();
     dog.src = '/assets/dog-final.png';
     dogImg.current = dog;
-
     const thin = new Image();
     thin.src = '/assets/moto-thin-final.png';
     motoThinImg.current = thin;
-
     const fat = new Image();
     fat.src = '/assets/moto-fat-final.png';
     motoFatImg.current = fat;
-
     CITY_BACKGROUNDS.forEach((bg, i) => {
       const img = new Image();
       img.src = bg;
@@ -145,24 +190,18 @@ export default function GameCanvas() {
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
-    
     const interval = setInterval(() => {
       const elapsed = Date.now() - phaseStartTime;
       const remaining = Math.max(0, PHASE_DURATION_MS - elapsed);
       setPhaseTimeLeft(remaining);
-      
-      if (remaining <= 0) {
-        setGameState({ phase: game.phase + 1 });
-      }
+      if (remaining <= 0) setGameState({ phase: game.phase + 1 });
     }, 1000);
-    
     return () => clearInterval(interval);
   }, [game.isPlaying, game.isPaused, game.phase, phaseStartTime, setGameState]);
 
   const currentCityIndex = (game.phase - 1) % CITIES.length;
   const currentCity = CITIES[currentCityIndex];
   const currentBgIndex = (game.phase - 1) % CITY_BACKGROUNDS.length;
-
   const getLaneX = (lane: 0 | 1) => lane === 0 ? LANE_LEFT_X : LANE_RIGHT_X;
 
   const formatTime = (ms: number) => {
@@ -175,65 +214,48 @@ export default function GameCanvas() {
   const spawnMotorcycle = useCallback(() => {
     const lane: 0 | 1 = Math.random() > 0.5 ? 0 : 1;
     const isFat = Math.random() > 0.5;
-    const baseSpeed = 3 + game.phase * 0.15;
-    const speed = isFat ? baseSpeed * 0.8 : baseSpeed;
-    
+    const baseSpeed = 2.5 + game.phase * 0.12;
+    const speed = isFat ? baseSpeed * 0.85 : baseSpeed;
     const startY = lane === 0 ? -50 : CANVAS_HEIGHT + 50;
-    
-    setMotorcycles(prev => [...prev, {
-      id: motoIdRef.current++,
-      lane,
-      y: startY,
-      speed: lane === 0 ? speed : -speed,
-      isFat,
-      hit: false,
-    }]);
+    setMotorcycles(prev => [...prev, { id: motoIdRef.current++, lane, y: startY, speed: lane === 0 ? speed : -speed, isFat, hit: false }]);
   }, [game.phase]);
 
   const handleKick = useCallback(() => {
     if (kickCooldown || !game.isPlaying || game.isPaused || isJumping) return;
-
     setIsJumping(true);
     setJumpFrame(0);
     setKickCooldown(true);
-    playBark();
 
     const playerX = getLaneX(playerLane);
-
     setMotorcycles(prev => {
       let newScore = game.score;
       let newCombo = game.combo;
       let hitAny = false;
 
       const updated = prev.map(m => {
-        if (m.hit) return m;
-        if (m.lane !== playerLane) return m;
-        
+        if (m.hit || m.lane !== playerLane) return m;
         const dist = Math.abs(m.y - playerY);
-
         if (dist < 70) {
           hitAny = true;
           newCombo++;
           const points = 100 * newCombo;
           newScore += points;
-          playScream();
-          
+          playPunch();
+          setTimeout(() => playScream(), 50);
+          if (newCombo === 5 || newCombo === 10 || newCombo === 15 || newCombo % 10 === 0) {
+            setTimeout(() => playHowl(), 200);
+          }
           setTexts(t => [...t, { id: textIdRef.current++, x: playerX, y: m.y, text: `+${points}`, frame: 0 }]);
           return { ...m, hit: true };
         }
         return m;
       });
 
-      if (hitAny) {
-        setGameState({ score: newScore, combo: newCombo });
-      }
+      if (hitAny) setGameState({ score: newScore, combo: newCombo });
       return updated;
     });
 
-    setTimeout(() => {
-      setIsJumping(false);
-      setKickCooldown(false);
-    }, 400);
+    setTimeout(() => { setIsJumping(false); setKickCooldown(false); }, 350);
   }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, isJumping, setGameState]);
 
   const switchLane = useCallback(() => {
@@ -273,54 +295,38 @@ export default function GameCanvas() {
       else if (Math.abs(dx) > Math.abs(dy)) switchLane();
       else moveVertical(dy > 0 ? 'down' : 'up');
     };
-    window.addEventListener('touchstart', onStart);
-    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchend', onEnd, { passive: true });
     return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd); };
   }, [switchLane, moveVertical, handleKick]);
 
   useEffect(() => {
     if (isJumping) {
-      const interval = setInterval(() => {
-        setJumpFrame(f => f + 1);
-      }, 30);
+      const interval = setInterval(() => setJumpFrame(f => f + 1), 35);
       return () => clearInterval(interval);
     }
   }, [isJumping]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
-
     let animId: number;
     const loop = () => {
       const now = Date.now();
-
-      const interval = Math.max(700 - game.phase * 10, 300);
+      const interval = Math.max(800 - game.phase * 8, 400);
       if (now - lastSpawnRef.current > interval) {
         spawnMotorcycle();
         lastSpawnRef.current = now;
       }
-
       setMotorcycles(prev => {
-        const updated = prev
-          .map(m => ({ ...m, y: m.y + m.speed }))
-          .filter(m => {
-            if (m.hit) return false;
-            if (m.lane === 0) return m.y < CANVAS_HEIGHT + 60;
-            return m.y > -60;
-          });
-        
-        const missed = prev.filter(m => {
+        const updated = prev.map(m => ({ ...m, y: m.y + m.speed })).filter(m => {
           if (m.hit) return false;
-          if (m.lane === 0) return m.y >= CANVAS_HEIGHT + 60;
-          return m.y <= -60;
+          return m.lane === 0 ? m.y < CANVAS_HEIGHT + 60 : m.y > -60;
         });
+        const missed = prev.filter(m => !m.hit && (m.lane === 0 ? m.y >= CANVAS_HEIGHT + 60 : m.y <= -60));
         if (missed.length > 0) setGameState({ combo: 0 });
-        
         return updated;
       });
-
-      setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 25));
-
+      setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 20));
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
@@ -335,8 +341,6 @@ export default function GameCanvas() {
 
     let animId: number;
     const render = () => {
-      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
       ctx.fillStyle = '#0a0a14';
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -345,80 +349,51 @@ export default function GameCanvas() {
         ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      ctx.fillStyle = 'rgba(30, 30, 40, 0.75)';
-      ctx.fillRect(LANE_LEFT_X - 35, 55, 70, CANVAS_HEIGHT - 55);
-      ctx.fillRect(LANE_RIGHT_X - 35, 55, 70, CANVAS_HEIGHT - 55);
+      ctx.fillStyle = 'rgba(25, 25, 35, 0.7)';
+      ctx.fillRect(LANE_LEFT_X - 35, 60, 70, CANVAS_HEIGHT - 60);
+      ctx.fillRect(LANE_RIGHT_X - 35, 60, 70, CANVAS_HEIGHT - 60);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.lineWidth = 2;
-      ctx.setLineDash([15, 10]);
+      ctx.setLineDash([12, 8]);
       [LANE_LEFT_X, LANE_RIGHT_X].forEach(x => {
         ctx.beginPath();
-        ctx.moveTo(x, 55);
+        ctx.moveTo(x, 60);
         ctx.lineTo(x, CANVAS_HEIGHT);
         ctx.stroke();
       });
       ctx.setLineDash([]);
 
-      ctx.fillStyle = 'rgba(255, 200, 0, 0.3)';
-      ctx.font = 'bold 14px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('↓', LANE_LEFT_X, 75);
-      ctx.fillText('↑', LANE_RIGHT_X, CANVAS_HEIGHT - 10);
-
       motorcycles.forEach(m => {
         const x = getLaneX(m.lane);
-        let scale: number;
-        if (m.lane === 0) {
-          scale = 0.7 + (m.y / CANVAS_HEIGHT) * 0.4;
-        } else {
-          scale = 1.1 - (m.y / CANVAS_HEIGHT) * 0.4;
-        }
+        const scale = m.lane === 0 ? 0.7 + (m.y / CANVAS_HEIGHT) * 0.4 : 1.1 - (m.y / CANVAS_HEIGHT) * 0.4;
         const size = SPRITE_SIZE * scale;
         const img = m.isFat ? motoFatImg.current : motoThinImg.current;
-        
         ctx.save();
         ctx.translate(x, m.y);
         if (m.lane === 1) ctx.rotate(Math.PI);
-        if (img?.complete) {
-          ctx.drawImage(img, -size / 2, -size / 2, size, size);
-        } else {
-          ctx.fillStyle = '#444';
-          ctx.fillRect(-size / 3, -size / 2, size / 1.5, size);
-        }
+        if (img?.complete) ctx.drawImage(img, -size / 2, -size / 2, size, size);
         ctx.restore();
       });
 
       const playerX = getLaneX(playerLane);
       let drawY = playerY;
       let rotation = 0;
-      
       if (isJumping) {
-        const jumpProgress = jumpFrame / 12;
-        const jumpHeight = Math.sin(jumpProgress * Math.PI) * 50;
-        drawY = playerY - jumpHeight;
-        rotation = Math.sin(jumpProgress * Math.PI) * 0.5;
+        const jumpProgress = jumpFrame / 10;
+        drawY = playerY - Math.sin(jumpProgress * Math.PI) * 45;
+        rotation = Math.sin(jumpProgress * Math.PI) * 0.4;
       }
-
       ctx.save();
       ctx.translate(playerX, drawY);
       ctx.rotate(rotation);
       if (playerLane === 1) ctx.scale(-1, 1);
-      
-      if (dogImg.current?.complete) {
-        ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
-      } else {
-        ctx.fillStyle = '#D2691E';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 25, 30, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      if (isJumping && jumpFrame > 2 && jumpFrame < 10) {
+      if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+      if (isJumping && jumpFrame > 2 && jumpFrame < 8) {
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
         ctx.moveTo(20, -5);
-        ctx.lineTo(40, 0);
+        ctx.lineTo(38, 0);
         ctx.lineTo(20, 5);
         ctx.closePath();
         ctx.fill();
@@ -426,47 +401,58 @@ export default function GameCanvas() {
       ctx.restore();
 
       texts.forEach(t => {
-        const alpha = 1 - t.frame / 25;
+        const alpha = 1 - t.frame / 20;
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = '#FFD700';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 22px Arial';
         ctx.textAlign = 'center';
-        ctx.strokeText(t.text, t.x, t.y - t.frame * 2);
-        ctx.fillText(t.text, t.x, t.y - t.frame * 2);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 4;
+        ctx.strokeText(t.text, t.x, t.y - t.frame * 2.5);
+        ctx.fillStyle = '#FFD700';
+        ctx.fillText(t.text, t.x, t.y - t.frame * 2.5);
         ctx.globalAlpha = 1;
       });
 
-      ctx.fillStyle = 'rgba(0,0,0,0.85)';
-      ctx.fillRect(0, 0, CANVAS_WIDTH, 52);
+      ctx.fillStyle = 'rgba(0,0,0,0.9)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, 55);
       
-      ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 12px Arial';
+      ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(currentCity, 8, 16);
-      ctx.fillStyle = '#FFF';
-      ctx.font = 'bold 10px Arial';
-      ctx.fillText(`FASE ${game.phase} de 100`, 8, 30);
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(currentCity, 10, 18);
       
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#AAA';
+      ctx.fillText(`FASE ${game.phase}/100`, 10, 34);
+      
+      ctx.font = 'bold 13px Arial';
       ctx.fillStyle = '#4CAF50';
-      ctx.font = 'bold 11px Arial';
-      ctx.fillText(formatTime(phaseTimeLeft), 8, 46);
+      ctx.fillText(formatTime(phaseTimeLeft), 10, 50);
       
       const progress = 1 - (phaseTimeLeft / PHASE_DURATION_MS);
-      ctx.fillStyle = '#333';
-      ctx.fillRect(70, 40, 120, 8);
+      ctx.fillStyle = '#222';
+      ctx.fillRect(85, 43, 100, 6);
       ctx.fillStyle = '#4CAF50';
-      ctx.fillRect(70, 40, 120 * progress, 8);
+      ctx.fillRect(85, 43, 100 * progress, 6);
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(85, 43, 100, 6);
       
       ctx.textAlign = 'right';
+      ctx.font = 'bold 26px Arial';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(`${game.score}`, CANVAS_WIDTH - 10, 28);
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 20px Arial';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 24);
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 10, 28);
+      
       if (game.combo > 1) {
-        ctx.fillStyle = '#FF6347';
-        ctx.font = 'bold 12px Arial';
-        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 8, 44);
+        ctx.font = 'bold 16px Arial';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(`${game.combo}x COMBO`, CANVAS_WIDTH - 10, 48);
+        ctx.fillStyle = game.combo >= 10 ? '#FF4444' : game.combo >= 5 ? '#FF8844' : '#FF6347';
+        ctx.fillText(`${game.combo}x COMBO`, CANVAS_WIDTH - 10, 48);
       }
 
       animId = requestAnimationFrame(render);
@@ -476,26 +462,18 @@ export default function GameCanvas() {
   }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft]);
 
   return (
-    <div 
-      className="flex flex-col items-center justify-center min-h-screen p-4"
-      style={{ 
-        backgroundImage: 'url(/assets/mural-bg.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      <div className="p-4 md:p-8 rounded-2xl" style={{ background: 'rgba(0,0,0,0.95)', boxShadow: '0 0 60px rgba(255, 215, 0, 0.2)' }}>
-        <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-4 border-yellow-500/80 rounded-lg" style={{ maxWidth: '100%', boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)' }} />
-        <div className="flex gap-3 mt-4 md:hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4" style={{ backgroundImage: 'url(/assets/mural-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="p-3 md:p-6 rounded-2xl" style={{ background: 'rgba(0,0,0,0.95)', boxShadow: '0 0 50px rgba(255, 215, 0, 0.15)' }}>
+        <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-4 border-yellow-500/70 rounded-lg" style={{ maxWidth: '100%', boxShadow: '0 0 25px rgba(255, 215, 0, 0.25)' }} />
+        <div className="flex gap-3 mt-3 md:hidden">
           <div className="flex flex-col gap-1">
-            <button onTouchStart={() => moveVertical('up')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↑</button>
-            <button onTouchStart={() => moveVertical('down')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↓</button>
+            <button onTouchStart={() => moveVertical('up')} className="w-14 h-14 bg-black border-2 border-yellow-500/50 rounded-lg text-xl text-yellow-500">↑</button>
+            <button onTouchStart={() => moveVertical('down')} className="w-14 h-14 bg-black border-2 border-yellow-500/50 rounded-lg text-xl text-yellow-500">↓</button>
           </div>
-          <button onTouchStart={switchLane} className="w-16 h-16 bg-black border-2 border-yellow-500/60 rounded-lg text-xs text-yellow-500 self-center active:bg-yellow-500/20 font-bold">TROCA<br/>PISTA</button>
-          <button onTouchStart={() => handleKick()} className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full text-sm font-bold text-black self-center shadow-lg active:scale-95">CHUTE!</button>
+          <button onTouchStart={switchLane} className="w-16 h-16 bg-black border-2 border-yellow-500/50 rounded-lg text-xs text-yellow-500 self-center font-bold">TROCA<br/>PISTA</button>
+          <button onTouchStart={() => handleKick()} className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full text-sm font-bold text-black self-center shadow-lg">CHUTE!</button>
         </div>
-        <p className="mt-4 text-white/70 text-xs bg-black/70 px-3 py-2 rounded-lg border border-yellow-500/30 text-center">ArrowKeys = mover | SPACE = chute voador</p>
+        <p className="mt-3 text-white/60 text-xs text-center">Setas = mover | ESPACO = voadora</p>
       </div>
     </div>
   );
