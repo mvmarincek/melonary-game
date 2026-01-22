@@ -2,20 +2,37 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../hooks/useStore';
 
 const playBark = () => {
-  if (typeof window !== 'undefined' && window.AudioContext) {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  try {
+    const ctx = new AudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.05);
-    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(250, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.04);
+    osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.15);
-  }
+    osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
+const playScream = () => {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {}
 };
 
 interface Motorcycle {
@@ -25,16 +42,6 @@ interface Motorcycle {
   speed: number;
   isFat: boolean;
   hit: boolean;
-  exploding: boolean;
-  explosionFrame: number;
-}
-
-interface Explosion {
-  id: number;
-  x: number;
-  y: number;
-  frame: number;
-  maxFrames: number;
 }
 
 interface FloatingText {
@@ -42,25 +49,14 @@ interface FloatingText {
   x: number;
   y: number;
   text: string;
-  color: string;
-  createdAt: number;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  color: string;
-  life: number;
+  frame: number;
 }
 
 const LANE_COUNT = 5;
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
 
-const CITY_BACKGROUNDS = [
+const CITIES = [
   { name: 'Rio de Janeiro', bg: '/assets/road-rio.png' },
   { name: 'New York', bg: '/assets/road-newyork.png' },
   { name: 'Tokyo', bg: '/assets/road-tokyo.png' },
@@ -69,149 +65,77 @@ const CITY_BACKGROUNDS = [
   { name: 'Los Angeles', bg: '/assets/road-losangeles.png' },
 ];
 
-const MOTO_THIN_SPRITE = '/assets/moto-thin.png';
-const MOTO_FAT_SPRITE = '/assets/moto-fat.png';
-const DOG_SPRITE = '/assets/dog-topdown.png';
-
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { game, setGameState } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
-  const [explosions, setExplosions] = useState<Explosion[]>([]);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
+  const [texts, setTexts] = useState<FloatingText[]>([]);
   const [playerLane, setPlayerLane] = useState(2);
   const [playerY, setPlayerY] = useState(CANVAS_HEIGHT - 150);
   const [facingRight, setFacingRight] = useState(true);
   const [isKicking, setIsKicking] = useState(false);
   const [kickCooldown, setKickCooldown] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
-  const explosionIdRef = useRef(0);
   const textIdRef = useRef(0);
-  const animationRef = useRef<number>();
-  const scrollOffset = useRef(0);
-
-  const dogImageRef = useRef<HTMLImageElement | null>(null);
-  const motoThinImageRef = useRef<HTMLImageElement | null>(null);
-  const motoFatImageRef = useRef<HTMLImageElement | null>(null);
-  const bgImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const scrollRef = useRef(0);
+  const transitionRef = useRef(0);
+  const prevCityRef = useRef(0);
+  
+  const dogImg = useRef<HTMLImageElement | null>(null);
+  const motoThinImg = useRef<HTMLImageElement | null>(null);
+  const motoFatImg = useRef<HTMLImageElement | null>(null);
+  const bgImgs = useRef<HTMLImageElement[]>([]);
 
   useEffect(() => {
-    let loadedCount = 0;
-    const totalImages = 3 + CITY_BACKGROUNDS.length;
+    const dog = new Image();
+    dog.src = '/assets/dog-final.png';
+    dogImg.current = dog;
 
-    const checkAllLoaded = () => {
-      loadedCount++;
-      if (loadedCount >= totalImages) {
-        setImagesLoaded(true);
-      }
-    };
+    const thin = new Image();
+    thin.src = '/assets/moto-thin-final.png';
+    motoThinImg.current = thin;
 
-    const dogImg = new Image();
-    dogImg.onload = checkAllLoaded;
-    dogImg.onerror = checkAllLoaded;
-    dogImg.src = DOG_SPRITE;
-    dogImageRef.current = dogImg;
+    const fat = new Image();
+    fat.src = '/assets/moto-fat-final.png';
+    motoFatImg.current = fat;
 
-    const motoThinImg = new Image();
-    motoThinImg.onload = checkAllLoaded;
-    motoThinImg.onerror = checkAllLoaded;
-    motoThinImg.src = MOTO_THIN_SPRITE;
-    motoThinImageRef.current = motoThinImg;
-
-    const motoFatImg = new Image();
-    motoFatImg.onload = checkAllLoaded;
-    motoFatImg.onerror = checkAllLoaded;
-    motoFatImg.src = MOTO_FAT_SPRITE;
-    motoFatImageRef.current = motoFatImg;
-
-    CITY_BACKGROUNDS.forEach((city) => {
+    CITIES.forEach((city, i) => {
       const img = new Image();
-      img.onload = checkAllLoaded;
-      img.onerror = checkAllLoaded;
       img.src = city.bg;
-      bgImagesRef.current.set(city.name, img);
+      bgImgs.current[i] = img;
     });
   }, []);
 
-  const currentCity = CITY_BACKGROUNDS[(game.phase - 1) % CITY_BACKGROUNDS.length];
+  const currentCityIndex = (game.phase - 1) % CITIES.length;
+  const currentCity = CITIES[currentCityIndex];
 
-  const getLaneX = (lane: number) => {
-    const laneWidth = CANVAS_WIDTH / LANE_COUNT;
-    return laneWidth * lane + laneWidth / 2;
-  };
-
-  const createExplosion = useCallback((x: number, y: number) => {
-    const newExplosion: Explosion = {
-      id: explosionIdRef.current++,
-      x,
-      y,
-      frame: 0,
-      maxFrames: 10,
-    };
-    setExplosions((prev) => [...prev, newExplosion]);
-
-    const newParticles: Particle[] = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 * i) / 8;
-      const speed = 2 + Math.random() * 3;
-      newParticles.push({
-        x,
-        y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: 2 + Math.random() * 3,
-        color: ['#FF4500', '#FFD700', '#FFA500'][Math.floor(Math.random() * 3)],
-        life: 1,
-      });
-    }
-    setParticles((prev) => [...prev, ...newParticles]);
-  }, []);
+  const getLaneX = (lane: number) => (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
 
   const spawnMotorcycle = useCallback(() => {
     const maxMotos = Math.min(1 + Math.floor(game.phase / 2), 3);
-    const motoCount = Math.floor(Math.random() * maxMotos) + 1;
+    const count = Math.floor(Math.random() * maxMotos) + 1;
     const usedLanes: number[] = [];
 
-    for (let i = 0; i < motoCount; i++) {
+    for (let i = 0; i < count; i++) {
       let lane: number;
-      do {
-        lane = Math.floor(Math.random() * LANE_COUNT);
-      } while (usedLanes.includes(lane));
+      do { lane = Math.floor(Math.random() * LANE_COUNT); } while (usedLanes.includes(lane));
       usedLanes.push(lane);
 
-      const baseSpeed = 2 + game.phase * 0.3;
       const isFat = Math.random() > 0.5;
-      const speed = isFat ? baseSpeed * 0.8 : baseSpeed * 1.1;
-
-      const newMoto: Motorcycle = {
+      const baseSpeed = 2 + game.phase * 0.25;
+      
+      setMotorcycles(prev => [...prev, {
         id: motoIdRef.current++,
         lane,
-        y: -100,
-        speed,
+        y: -80,
+        speed: isFat ? baseSpeed * 0.85 : baseSpeed,
         isFat,
         hit: false,
-        exploding: false,
-        explosionFrame: 0,
-      };
-
-      setMotorcycles((prev) => [...prev, newMoto]);
+      }]);
     }
   }, [game.phase]);
-
-  const addFloatingText = useCallback((x: number, y: number, text: string, color: string) => {
-    const newText: FloatingText = {
-      id: textIdRef.current++,
-      x,
-      y,
-      text,
-      color,
-      createdAt: Date.now(),
-    };
-    setFloatingTexts((prev) => [...prev, newText]);
-  }, []);
 
   const handleKick = useCallback(() => {
     if (kickCooldown || !game.isPlaying || game.isPaused) return;
@@ -221,471 +145,227 @@ export default function GameCanvas() {
 
     const playerX = getLaneX(playerLane);
 
-    setMotorcycles((prev) => {
+    setMotorcycles(prev => {
       let newScore = game.score;
       let newCombo = game.combo;
       let hitAny = false;
 
-      const updated = prev.map((m) => {
-        if (m.hit || m.exploding) return m;
-
+      const updated = prev.map(m => {
+        if (m.hit) return m;
         const motoX = getLaneX(m.lane);
-        const distance = Math.sqrt(
-          Math.pow(motoX - playerX, 2) + Math.pow(m.y - playerY, 2)
-        );
+        const dist = Math.sqrt((motoX - playerX) ** 2 + (m.y - playerY) ** 2);
 
-        if (distance < 80) {
+        if (dist < 70) {
           hitAny = true;
           newCombo++;
           const points = 100 * newCombo;
           newScore += points;
-
-          createExplosion(motoX, m.y);
-          addFloatingText(motoX, m.y, `+${points}`, '#FFD700');
-
-          return { ...m, hit: true, exploding: true };
+          playScream();
+          
+          setTexts(t => [...t, { id: textIdRef.current++, x: motoX, y: m.y, text: `+${points}`, frame: 0 }]);
+          return { ...m, hit: true };
         }
         return m;
       });
 
-      if (hitAny) {
-        setGameState({ score: newScore, combo: newCombo });
-      }
-
+      if (hitAny) setGameState({ score: newScore, combo: newCombo });
       return updated;
     });
 
-    setTimeout(() => setIsKicking(false), 200);
-    setTimeout(() => setKickCooldown(false), 400);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, createExplosion, addFloatingText, setGameState]);
+    setTimeout(() => setIsKicking(false), 150);
+    setTimeout(() => setKickCooldown(false), 300);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, setGameState]);
 
-  const movePlayer = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
+  const movePlayer = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
     if (!game.isPlaying || game.isPaused) return;
-
     playBark();
 
-    if (direction === 'left') {
-      setPlayerLane((prev) => Math.max(0, prev - 1));
-      setFacingRight(false);
-    } else if (direction === 'right') {
-      setPlayerLane((prev) => Math.min(LANE_COUNT - 1, prev + 1));
-      setFacingRight(true);
-    } else if (direction === 'up') {
-      setPlayerY((prev) => Math.max(100, prev - 50));
-    } else if (direction === 'down') {
-      setPlayerY((prev) => Math.min(CANVAS_HEIGHT - 80, prev + 50));
-    }
+    if (dir === 'left') { setPlayerLane(p => Math.max(0, p - 1)); setFacingRight(false); }
+    else if (dir === 'right') { setPlayerLane(p => Math.min(LANE_COUNT - 1, p + 1)); setFacingRight(true); }
+    else if (dir === 'up') setPlayerY(p => Math.max(80, p - 40));
+    else if (dir === 'down') setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + 40));
   }, [game.isPlaying, game.isPaused]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (!game.isPlaying) return;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          movePlayer('left');
-          break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          movePlayer('right');
-          break;
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          movePlayer('up');
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          movePlayer('down');
-          break;
-        case ' ':
-          e.preventDefault();
-          handleKick();
-          break;
-        case 'Escape':
-          setGameState({ isPaused: !game.isPaused });
-          break;
-      }
+      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
+      else if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
+      else if (e.key === 'ArrowUp' || e.key === 'w') movePlayer('up');
+      else if (e.key === 'ArrowDown' || e.key === 's') movePlayer('down');
+      else if (e.key === ' ') { e.preventDefault(); handleKick(); }
+      else if (e.key === 'Escape') setGameState({ isPaused: !game.isPaused });
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [game.isPlaying, game.isPaused, movePlayer, handleKick, setGameState]);
 
   useEffect(() => {
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
+    let startX = 0, startY = 0;
+    const onStart = (e: TouchEvent) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; };
+    const onEnd = (e: TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) < 25 && Math.abs(dy) < 25) handleKick();
+      else if (Math.abs(dx) > Math.abs(dy)) movePlayer(dx > 0 ? 'right' : 'left');
+      else movePlayer(dy > 0 ? 'down' : 'up');
     };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndX = e.changedTouches[0].clientX;
-      const touchEndY = e.changedTouches[0].clientY;
-      const diffX = touchEndX - touchStartX;
-      const diffY = touchEndY - touchStartY;
-
-      if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) {
-        handleKick();
-      } else if (Math.abs(diffX) > Math.abs(diffY)) {
-        movePlayer(diffX > 0 ? 'right' : 'left');
-      } else {
-        movePlayer(diffY > 0 ? 'down' : 'up');
-      }
-    };
-
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
+    window.addEventListener('touchstart', onStart);
+    window.addEventListener('touchend', onEnd);
+    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd); };
   }, [movePlayer, handleKick]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
 
-    const gameLoop = () => {
+    let animId: number;
+    const loop = () => {
       const now = Date.now();
-      scrollOffset.current = (scrollOffset.current + 3) % CANVAS_HEIGHT;
+      scrollRef.current = (scrollRef.current + 2) % 1000;
 
-      const spawnInterval = Math.max(1500 - game.phase * 100, 600);
-      if (now - lastSpawnRef.current > spawnInterval) {
+      if (prevCityRef.current !== currentCityIndex) {
+        transitionRef.current = 1;
+        prevCityRef.current = currentCityIndex;
+      }
+      if (transitionRef.current > 0) transitionRef.current -= 0.02;
+
+      const interval = Math.max(1200 - game.phase * 80, 500);
+      if (now - lastSpawnRef.current > interval) {
         spawnMotorcycle();
         lastSpawnRef.current = now;
       }
 
-      setMotorcycles((prev) => {
-        const updated = prev
-          .map((m) => {
-            if (m.exploding) {
-              return { ...m, explosionFrame: m.explosionFrame + 1 };
-            }
-            return { ...m, y: m.y + m.speed };
-          })
-          .filter((m) => m.y < CANVAS_HEIGHT + 100 && (!m.exploding || m.explosionFrame < 15));
-
-        const missed = prev.filter((m) => m.y >= CANVAS_HEIGHT && !m.hit && !m.exploding);
-        if (missed.length > 0) {
-          setGameState({ combo: 0 });
-        }
-
+      setMotorcycles(prev => {
+        const updated = prev.map(m => ({ ...m, y: m.y + m.speed })).filter(m => m.y < CANVAS_HEIGHT + 50 && !m.hit);
+        const missed = prev.filter(m => m.y >= CANVAS_HEIGHT && !m.hit);
+        if (missed.length > 0) setGameState({ combo: 0 });
         return updated;
       });
 
-      setExplosions((prev) =>
-        prev
-          .map((e) => ({ ...e, frame: e.frame + 1 }))
-          .filter((e) => e.frame < e.maxFrames)
-      );
+      setTexts(prev => prev.map(t => ({ ...t, frame: t.frame + 1 })).filter(t => t.frame < 30));
 
-      setParticles((prev) =>
-        prev
-          .map((p) => ({
-            ...p,
-            x: p.x + p.vx,
-            y: p.y + p.vy,
-            vy: p.vy + 0.2,
-            life: p.life - 0.03,
-          }))
-          .filter((p) => p.life > 0)
-      );
-
-      setFloatingTexts((prev) => prev.filter((ft) => now - ft.createdAt < 1000));
-
-      animationRef.current = requestAnimationFrame(gameLoop);
+      animId = requestAnimationFrame(loop);
     };
-
-    animationRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [game.isPlaying, game.isPaused, game.phase, spawnMotorcycle, setGameState]);
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [game.isPlaying, game.isPaused, game.phase, currentCityIndex, spawnMotorcycle, setGameState]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let animId: number;
     const render = () => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      const bgImage = bgImagesRef.current.get(currentCity.name);
-      drawBackground(ctx, bgImage, scrollOffset.current);
-      drawLaneMarkers(ctx);
-      
-      motorcycles.filter(m => !m.exploding).forEach((moto) => {
-        const motoImg = moto.isFat ? motoFatImageRef.current : motoThinImageRef.current;
-        drawMotorcycle(ctx, moto, motoImg);
+      const bgImg = bgImgs.current[currentCityIndex];
+      if (bgImg?.complete && bgImg.naturalWidth > 0) {
+        const h = (CANVAS_WIDTH / bgImg.naturalWidth) * bgImg.naturalHeight;
+        const y1 = (scrollRef.current % h) - h;
+        ctx.drawImage(bgImg, 0, y1, CANVAS_WIDTH, h);
+        ctx.drawImage(bgImg, 0, y1 + h, CANVAS_WIDTH, h);
+        if (y1 + h * 2 < CANVAS_HEIGHT) ctx.drawImage(bgImg, 0, y1 + h * 2, CANVAS_WIDTH, h);
+      } else {
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      }
+
+      if (transitionRef.current > 0) {
+        ctx.fillStyle = `rgba(0,0,0,${transitionRef.current * 0.5})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      }
+
+      const laneW = CANVAS_WIDTH / LANE_COUNT;
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([15, 10]);
+      for (let i = 1; i < LANE_COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * laneW, 0);
+        ctx.lineTo(i * laneW, CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      motorcycles.forEach(m => {
+        const x = getLaneX(m.lane);
+        const scale = 0.35 + (m.y / CANVAS_HEIGHT) * 0.45;
+        const w = 60 * scale, h = 75 * scale;
+        const img = m.isFat ? motoFatImg.current : motoThinImg.current;
+        if (img?.complete) ctx.drawImage(img, x - w / 2, m.y - h / 2, w, h);
+        else {
+          ctx.fillStyle = '#333';
+          ctx.beginPath();
+          ctx.ellipse(x, m.y, w / 2.5, h / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       });
-      
-      drawPlayer(ctx, playerLane, playerY, isKicking, facingRight, dogImageRef.current);
-      explosions.forEach((exp) => drawExplosion(ctx, exp));
-      particles.forEach((p) => drawParticle(ctx, p));
-      floatingTexts.forEach((ft) => drawFloatingText(ctx, ft, Date.now()));
-      drawHUD(ctx, currentCity.name, game.score, game.combo, game.phase);
 
-      requestAnimationFrame(render);
+      const px = getLaneX(playerLane);
+      ctx.save();
+      ctx.translate(px, playerY);
+      if (!facingRight) ctx.scale(-1, 1);
+      if (isKicking) ctx.rotate(0.25);
+      const pw = 70, ph = 85;
+      if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -pw / 2, -ph / 2, pw, ph);
+      else {
+        ctx.fillStyle = '#D2691E';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 25, 35, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      texts.forEach(t => {
+        const alpha = 1 - t.frame / 30;
+        const yOff = t.frame * 1.5;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.text, t.x, t.y - yOff);
+        ctx.globalAlpha = 1;
+      });
+
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, 40);
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(currentCity.name, 8, 16);
+      ctx.fillStyle = '#FFF';
+      ctx.fillText(`FASE ${game.phase}`, 8, 32);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - 8, 18);
+      if (game.combo > 1) {
+        ctx.fillStyle = '#FF6347';
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText(`x${game.combo}`, CANVAS_WIDTH - 8, 32);
+      }
+
+      animId = requestAnimationFrame(render);
     };
-
-    render();
-  }, [motorcycles, explosions, particles, playerLane, playerY, isKicking, facingRight, floatingTexts, currentCity, imagesLoaded, game.score, game.combo, game.phase]);
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, [motorcycles, texts, playerLane, playerY, isKicking, facingRight, currentCityIndex, currentCity.name, game.score, game.combo, game.phase]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-melonary-darker to-melonary-dark p-4">
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        className="border-4 border-melonary-gold rounded-lg shadow-2xl"
-        style={{ maxWidth: '100%', height: 'auto' }}
-      />
-      
-      <div className="flex gap-2 mt-4 md:hidden">
-        <div className="flex flex-col gap-2">
-          <button
-            onTouchStart={() => movePlayer('up')}
-            className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40"
-          >
-            ↑
-          </button>
-          <button
-            onTouchStart={() => movePlayer('down')}
-            className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40"
-          >
-            ↓
-          </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-melonary-dark p-2">
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-melonary-gold rounded-lg" style={{ maxWidth: '100%' }} />
+      <div className="flex gap-2 mt-3 md:hidden">
+        <div className="flex flex-col gap-1">
+          <button onTouchStart={() => movePlayer('up')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↑</button>
+          <button onTouchStart={() => movePlayer('down')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold">↓</button>
         </div>
-        <button
-          onTouchStart={() => movePlayer('left')}
-          className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40 self-center"
-        >
-          ←
-        </button>
-        <button
-          onTouchStart={() => handleKick()}
-          className="w-16 h-16 bg-melonary-gold border-2 border-melonary-amber rounded-full flex items-center justify-center text-xs font-bold text-melonary-dark active:bg-melonary-amber self-center"
-        >
-          KICK!
-        </button>
-        <button
-          onTouchStart={() => movePlayer('right')}
-          className="w-14 h-14 bg-melonary-gold/20 border-2 border-melonary-gold rounded-lg flex items-center justify-center text-xl text-melonary-gold active:bg-melonary-gold/40 self-center"
-        >
-          →
-        </button>
+        <button onTouchStart={() => movePlayer('left')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold self-center">←</button>
+        <button onTouchStart={() => handleKick()} className="w-14 h-14 bg-melonary-gold border border-melonary-amber rounded-full text-xs font-bold text-melonary-dark self-center">KICK</button>
+        <button onTouchStart={() => movePlayer('right')} className="w-12 h-12 bg-melonary-gold/20 border border-melonary-gold rounded text-lg text-melonary-gold self-center">→</button>
       </div>
-
-      <div className="mt-4 text-center text-gray-400 text-xs">
-        <span className="hidden md:block">WASD/Setas = mover | ESPACO = voadora</span>
-        <span className="md:hidden">Deslize = mover | Toque = voadora</span>
-      </div>
+      <p className="mt-2 text-gray-500 text-xs">WASD/Setas = mover | Espaco = voadora</p>
     </div>
   );
-}
-
-function drawBackground(ctx: CanvasRenderingContext2D, bgImage: HTMLImageElement | undefined, scroll: number) {
-  if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
-    const imgHeight = (CANVAS_WIDTH / bgImage.naturalWidth) * bgImage.naturalHeight;
-    const y1 = (scroll % imgHeight) - imgHeight;
-    const y2 = y1 + imgHeight;
-    const y3 = y2 + imgHeight;
-    
-    ctx.drawImage(bgImage, 0, y1, CANVAS_WIDTH, imgHeight);
-    ctx.drawImage(bgImage, 0, y2, CANVAS_WIDTH, imgHeight);
-    if (y3 < CANVAS_HEIGHT) {
-      ctx.drawImage(bgImage, 0, y3, CANVAS_WIDTH, imgHeight);
-    }
-  } else {
-    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    gradient.addColorStop(0, '#1a0a2e');
-    gradient.addColorStop(0.5, '#2d1b4e');
-    gradient.addColorStop(1, '#4a2c6e');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    ctx.fillStyle = 'rgba(40, 40, 50, 0.9)';
-    ctx.fillRect(20, 0, CANVAS_WIDTH - 40, CANVAS_HEIGHT);
-  }
-}
-
-function drawLaneMarkers(ctx: CanvasRenderingContext2D) {
-  const laneWidth = CANVAS_WIDTH / LANE_COUNT;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([20, 15]);
-  
-  for (let i = 1; i < LANE_COUNT; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * laneWidth, 0);
-    ctx.lineTo(i * laneWidth, CANVAS_HEIGHT);
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-}
-
-function drawMotorcycle(ctx: CanvasRenderingContext2D, moto: Motorcycle, motoImage: HTMLImageElement | null) {
-  const x = (CANVAS_WIDTH / LANE_COUNT) * moto.lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
-  const y = moto.y;
-
-  const scale = 0.4 + (y / CANVAS_HEIGHT) * 0.5;
-  const width = 70 * scale;
-  const height = 90 * scale;
-
-  if (motoImage && motoImage.complete && motoImage.naturalWidth > 0) {
-    ctx.save();
-    ctx.drawImage(
-      motoImage,
-      x - width / 2,
-      y - height / 2,
-      width,
-      height
-    );
-    ctx.restore();
-  } else {
-    ctx.fillStyle = moto.isFat ? '#444' : '#333';
-    ctx.beginPath();
-    ctx.ellipse(x, y, width / 2.5, height / 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#CC0000';
-    ctx.fillRect(x - width / 4, y - height / 3, width / 2, height / 4);
-  }
-}
-
-function drawPlayer(ctx: CanvasRenderingContext2D, lane: number, y: number, isKicking: boolean, facingRight: boolean, dogImage: HTMLImageElement | null) {
-  const x = (CANVAS_WIDTH / LANE_COUNT) * lane + (CANVAS_WIDTH / LANE_COUNT) / 2;
-  const width = 80;
-  const height = 100;
-
-  ctx.save();
-  
-  ctx.translate(x, y);
-  
-  if (!facingRight) {
-    ctx.scale(-1, 1);
-  }
-  
-  if (isKicking) {
-    ctx.rotate(0.3);
-  }
-
-  if (dogImage && dogImage.complete && dogImage.naturalWidth > 0) {
-    ctx.drawImage(
-      dogImage,
-      -width / 2,
-      -height / 2,
-      width,
-      height
-    );
-  } else {
-    ctx.fillStyle = '#D2691E';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 30, 40, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.ellipse(0, 5, 25, 32, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function drawExplosion(ctx: CanvasRenderingContext2D, exp: Explosion) {
-  const progress = exp.frame / exp.maxFrames;
-  const size = 40 + progress * 60;
-  const alpha = 1 - progress;
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-
-  const gradient = ctx.createRadialGradient(exp.x, exp.y, 0, exp.x, exp.y, size);
-  gradient.addColorStop(0, '#FFFFFF');
-  gradient.addColorStop(0.2, '#FFFF00');
-  gradient.addColorStop(0.4, '#FFA500');
-  gradient.addColorStop(0.6, '#FF4500');
-  gradient.addColorStop(0.8, '#FF0000');
-  gradient.addColorStop(1, 'transparent');
-
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(exp.x, exp.y, size, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FFD700';
-  ctx.font = 'bold 28px Impact';
-  ctx.textAlign = 'center';
-  if (exp.frame < 8) {
-    const texts = ['POW!', 'BOOM!', 'BAM!', 'CRASH!'];
-    ctx.fillText(texts[exp.id % texts.length], exp.x, exp.y - size - 10);
-  }
-
-  ctx.restore();
-}
-
-function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
-  ctx.save();
-  ctx.globalAlpha = p.life;
-  ctx.fillStyle = p.color;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawFloatingText(ctx: CanvasRenderingContext2D, ft: FloatingText, now: number) {
-  const age = now - ft.createdAt;
-  const progress = age / 1000;
-  const alpha = 1 - progress;
-  const yOffset = progress * 50;
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = ft.color;
-  ctx.font = 'bold 20px "Press Start 2P", monospace';
-  ctx.textAlign = 'center';
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 3;
-  ctx.strokeText(ft.text, ft.x, ft.y - yOffset);
-  ctx.fillText(ft.text, ft.x, ft.y - yOffset);
-  ctx.restore();
-}
-
-function drawHUD(ctx: CanvasRenderingContext2D, cityName: string, score: number, combo: number, phase: number) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-  ctx.fillRect(0, 0, CANVAS_WIDTH, 50);
-  
-  ctx.fillStyle = '#FFD700';
-  ctx.font = 'bold 12px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText(cityName, 10, 20);
-  
-  ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px Arial';
-  ctx.fillText(`FASE ${phase}`, 10, 38);
-  
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#FFD700';
-  ctx.font = 'bold 16px Arial';
-  ctx.fillText(`${score}`, CANVAS_WIDTH - 10, 20);
-  
-  if (combo > 1) {
-    ctx.fillStyle = '#FF6347';
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText(`x${combo} COMBO!`, CANVAS_WIDTH - 10, 38);
-  }
 }
