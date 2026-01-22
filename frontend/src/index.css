@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-gold: #FFD700;
+  --color-amber: #FFBF00;
+  --color-caramel: #D2691E;
+  --color-bronze: #CD7F32;
+  --color-dark: #1a1a2e;
+  --color-darker: #0f0f1a;
+}
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background: linear-gradient(135deg, var(--color-darker) 0%, var(--color-dark) 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-gold {
+  @apply px-6 py-3 bg-gradient-to-r from-melonary-gold to-melonary-amber text-melonary-dark font-bold rounded-lg;
+  @apply shadow-lg hover:shadow-melonary-gold/50 transition-all duration-300;
+  @apply active:scale-95;
+}
+
+.btn-outline {
+  @apply px-6 py-3 border-2 border-melonary-gold text-melonary-gold rounded-lg;
+  @apply hover:bg-melonary-gold hover:text-melonary-dark transition-all duration-300;
+  @apply active:scale-95;
+}
+
+.card {
+  @apply bg-melonary-dark/80 backdrop-blur-sm rounded-xl p-6 border border-melonary-gold/20;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-melonary-darker border border-melonary-gold/30 rounded-lg;
+  @apply text-white placeholder-gray-500 focus:border-melonary-gold focus:outline-none;
+  @apply transition-colors duration-300;
+}
+
+.score-display {
+  font-size: 2rem;
+  text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-amber);
+}
+
+.combo-text {
+  animation: combo-pop 0.3s ease-out;
+}
+
+@keyframes combo-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+.floating-points {
+  animation: float-up 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+}
+
+.kick-effect {
+  animation: kick-flash 0.2s ease-out;
+}
+
+@keyframes kick-flash {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
+@media (max-width: 640px) {
+  .score-display {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 128">
+  <!-- Melonary - Flying Kick Attack Pose -->
+  
+  <!-- Motion Lines -->
+  <line x1="5" y1="50" x2="30" y2="50" stroke="#FFD700" stroke-width="2" opacity="0.5"/>
+  <line x1="10" y1="60" x2="35" y2="60" stroke="#FFD700" stroke-width="2" opacity="0.4"/>
+  <line x1="15" y1="70" x2="40" y2="70" stroke="#FFD700" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Body (Rotated for kick) -->
+  <g transform="rotate(-30 80 65)">
+    <ellipse cx="80" cy="70" rx="25" ry="30" fill="#D2691E"/>
+    <ellipse cx="80" cy="68" rx="22" ry="26" fill="#FFD700"/>
+    
+    <!-- Armor -->
+    <path d="M62 58 L70 50 L90 50 L98 58 L98 80 L62 80 Z" fill="#2a2a2a"/>
+    <path d="M66 54 L72 48 L88 48 L94 54 L94 76 L66 76 Z" fill="#3a3a3a"/>
+    
+    <!-- Gold Details -->
+    <rect x="64" y="56" width="32" height="3" fill="#FFD700" rx="1"/>
+    <circle cx="80" cy="64" r="6" fill="#2a2a2a" stroke="#FFD700" stroke-width="2"/>
+    <circle cx="80" cy="64" r="4" fill="#FFD700"/>
+  </g>
+  
+  <!-- Head (Determined expression) -->
+  <ellipse cx="70" cy="35" rx="22" ry="20" fill="#D2691E"/>
+  <ellipse cx="70" cy="36" rx="18" ry="16" fill="#FFD700"/>
+  
+  <!-- Ears -->
+  <ellipse cx="50" cy="22" rx="7" ry="10" fill="#D2691E" transform="rotate(-30 50 22)"/>
+  <ellipse cx="88" cy="25" rx="7" ry="10" fill="#D2691E" transform="rotate(10 88 25)"/>
+  
+  <!-- Sunglasses (Glinting) -->
+  <rect x="52" y="28" width="14" height="9" rx="2" fill="#1a1a2e"/>
+  <rect x="70" y="28" width="14" height="9" rx="2" fill="#1a1a2e"/>
+  <rect x="66" y="31" width="4" height="2" fill="#1a1a2e"/>
+  <rect x="54" y="30" width="10" height="5" rx="1" fill="#2a5a8a"/>
+  <rect x="72" y="30" width="10" height="5" rx="1" fill="#2a5a8a"/>
+  <line x1="56" y1="31" x2="62" y2="34" stroke="white" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Nose -->
+  <ellipse cx="70" cy="42" rx="5" ry="3" fill="#2a2a2a"/>
+  
+  <!-- Mouth (Yelling) -->
+  <ellipse cx="70" cy="50" rx="8" ry="5" fill="#2a2a2a"/>
+  <ellipse cx="70" cy="49" rx="6" ry="3" fill="#8B0000"/>
+  
+  <!-- Extended Kicking Leg -->
+  <g transform="rotate(-15 100 80)">
+    <rect x="95" y="70" width="14" height="40" fill="#1a1a2e" rx="5"/>
+    <ellipse cx="102" cy="108" rx="12" ry="6" fill="#2a2a2a"/>
+    
+    <!-- Impact Effect -->
+    <circle cx="115" cy="100" r="15" fill="#FFD700" opacity="0.3"/>
+    <circle cx="118" cy="98" r="10" fill="#FFFF00" opacity="0.4"/>
+  </g>
+  
+  <!-- Other Leg (Bent back) -->
+  <rect x="55" y="90" width="12" height="25" fill="#1a1a2e" rx="4" transform="rotate(30 60 95)"/>
+  
+  <!-- Arms (Stretched for balance) -->
+  <ellipse cx="45" cy="55" rx="8" ry="12" fill="#D2691E" transform="rotate(-45 45 55)"/>
+  <ellipse cx="46" cy="56" rx="6" ry="10" fill="#FFD700" transform="rotate(-45 46 56)"/>
+  
+  <ellipse cx="100" cy="45" rx="8" ry="12" fill="#D2691E" transform="rotate(30 100 45)"/>
+  <ellipse cx="99" cy="46" rx="6" ry="10" fill="#FFD700" transform="rotate(30 99 46)"/>
+  
+  <!-- POW Effect -->
+  <text x="130" y="85" font-family="Impact, sans-serif" font-size="16" fill="#FFD700" font-weight="bold">POW!</text>
+  
+  <!-- Energy Aura -->
+  <ellipse cx="80" cy="70" rx="50" ry="45" fill="none" stroke="#FFD700" stroke-width="2" opacity="0.3" stroke-dasharray="5,5"/>
+</svg>

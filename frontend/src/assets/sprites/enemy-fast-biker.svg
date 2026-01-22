@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Fast Biker - Orange/Red Theme -->
+  
+  <!-- Motorcycle Body (Sportier) -->
+  <ellipse cx="64" cy="95" rx="42" ry="10" fill="#8B0000"/>
+  <rect x="28" y="75" width="72" height="18" rx="8" fill="#CC3300"/>
+  <rect x="30" y="68" width="20" height="12" rx="4" fill="#FF4500"/>
+  
+  <!-- Racing Stripes -->
+  <rect x="30" y="80" width="68" height="3" fill="#FFD700"/>
+  
+  <!-- Engine (Bigger) -->
+  <rect x="48" y="80" width="24" height="14" fill="#444"/>
+  <circle cx="54" cy="87" r="5" fill="#333"/>
+  <circle cx="66" cy="87" r="5" fill="#333"/>
+  
+  <!-- Wheels (Thinner, sportier) -->
+  <circle cx="25" cy="100" r="16" fill="#1a1a1a"/>
+  <circle cx="25" cy="100" r="12" fill="#333"/>
+  <circle cx="25" cy="100" r="3" fill="#666"/>
+  
+  <circle cx="103" cy="100" r="16" fill="#1a1a1a"/>
+  <circle cx="103" cy="100" r="12" fill="#333"/>
+  <circle cx="103" cy="100" r="3" fill="#666"/>
+  
+  <!-- Handlebars (Lower, racing style) -->
+  <rect x="88" y="62" width="22" height="5" rx="2" fill="#444"/>
+  
+  <!-- Headlight -->
+  <ellipse cx="112" cy="72" rx="5" ry="4" fill="#FFFF00"/>
+  
+  <!-- Speed Lines -->
+  <line x1="2" y1="75" x2="20" y2="75" stroke="#FF6600" stroke-width="2" opacity="0.6"/>
+  <line x1="5" y1="85" x2="22" y2="85" stroke="#FF6600" stroke-width="2" opacity="0.5"/>
+  <line x1="8" y1="95" x2="18" y2="95" stroke="#FF6600" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Rider Body (Leaning forward) -->
+  <ellipse cx="52" cy="52" rx="16" ry="20" fill="#CC3300" transform="rotate(-15 52 52)"/>
+  
+  <!-- Rider Arms (Stretched forward) -->
+  <rect x="62" y="48" width="28" height="7" rx="3" fill="#CC3300"/>
+  
+  <!-- Rider Head -->
+  <ellipse cx="50" cy="30" rx="12" ry="14" fill="#FFE4B5"/>
+  
+  <!-- Racing Helmet -->
+  <ellipse cx="50" cy="26" rx="14" ry="12" fill="#FF4500"/>
+  <ellipse cx="50" cy="24" rx="12" ry="9" fill="#CC3300"/>
+  <path d="M38 28 L62 28 L60 35 L40 35 Z" fill="#1a1a1a"/>
+  
+  <!-- Visor (Dark tinted) -->
+  <rect x="40" y="29" width="20" height="5" rx="1" fill="#2a2a2a"/>
+  
+  <!-- Flames on helmet -->
+  <path d="M36 20 Q40 15 38 22" fill="#FFD700"/>
+  <path d="M34 22 Q38 18 36 24" fill="#FF6600"/>
+  
+  <!-- Rider Legs (Tucked) -->
+  <rect x="42" y="68" width="7" height="18" rx="2" fill="#1a1a1a"/>
+  <rect x="53" y="68" width="7" height="18" rx="2" fill="#1a1a1a"/>
+  
+  <!-- Exhaust Flames -->
+  <ellipse cx="12" cy="88" rx="8" ry="4" fill="#FF6600" opacity="0.7"/>
+  <ellipse cx="8" cy="88" rx="5" ry="3" fill="#FFFF00" opacity="0.5"/>
+</svg>

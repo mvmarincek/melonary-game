@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Enemy Biker on Motorcycle -->
+  
+  <!-- Motorcycle Body -->
+  <ellipse cx="64" cy="95" rx="45" ry="12" fill="#2a2a2a"/>
+  <rect x="25" y="75" width="78" height="20" rx="5" fill="#3a3a3a"/>
+  <rect x="30" y="70" width="25" height="15" rx="3" fill="#4a4a4a"/>
+  
+  <!-- Engine -->
+  <rect x="45" y="82" width="20" height="12" fill="#555"/>
+  <circle cx="50" cy="88" r="4" fill="#333"/>
+  <circle cx="60" cy="88" r="4" fill="#333"/>
+  
+  <!-- Wheels -->
+  <circle cx="25" cy="100" r="18" fill="#1a1a1a"/>
+  <circle cx="25" cy="100" r="14" fill="#2a2a2a"/>
+  <circle cx="25" cy="100" r="4" fill="#555"/>
+  
+  <circle cx="103" cy="100" r="18" fill="#1a1a1a"/>
+  <circle cx="103" cy="100" r="14" fill="#2a2a2a"/>
+  <circle cx="103" cy="100" r="4" fill="#555"/>
+  
+  <!-- Wheel Spokes -->
+  <line x1="25" y1="86" x2="25" y2="114" stroke="#444" stroke-width="2"/>
+  <line x1="11" y1="100" x2="39" y2="100" stroke="#444" stroke-width="2"/>
+  <line x1="103" y1="86" x2="103" y2="114" stroke="#444" stroke-width="2"/>
+  <line x1="89" y1="100" x2="117" y2="100" stroke="#444" stroke-width="2"/>
+  
+  <!-- Handlebars -->
+  <rect x="85" y="58" width="25" height="6" rx="2" fill="#555"/>
+  <circle cx="110" cy="58" r="4" fill="#333"/>
+  
+  <!-- Headlight -->
+  <circle cx="115" cy="75" r="6" fill="#FFFF99"/>
+  <circle cx="115" cy="75" r="4" fill="#FFFFCC"/>
+  
+  <!-- Rider Body -->
+  <ellipse cx="55" cy="55" rx="18" ry="22" fill="#2a2a2a"/>
+  <ellipse cx="55" cy="54" rx="15" ry="18" fill="#3a3a3a"/>
+  
+  <!-- Rider Arms -->
+  <rect x="65" y="52" width="25" height="8" rx="3" fill="#2a2a2a"/>
+  <rect x="40" y="55" width="10" height="6" rx="2" fill="#2a2a2a"/>
+  
+  <!-- Rider Head -->
+  <ellipse cx="55" cy="30" rx="14" ry="16" fill="#FFE4B5"/>
+  
+  <!-- Helmet -->
+  <ellipse cx="55" cy="25" rx="16" ry="14" fill="#1a1a1a"/>
+  <ellipse cx="55" cy="22" rx="14" ry="10" fill="#2a2a2a"/>
+  <rect x="41" y="25" width="28" height="8" rx="2" fill="#333" opacity="0.8"/>
+  
+  <!-- Visor -->
+  <rect x="43" y="27" width="24" height="5" rx="1" fill="#4a6080"/>
+  <line x1="45" y1="28" x2="55" y2="31" stroke="white" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Leather Jacket Details -->
+  <line x1="45" y1="45" x2="45" y2="65" stroke="#444" stroke-width="1"/>
+  <line x1="65" y1="45" x2="65" y2="65" stroke="#444" stroke-width="1"/>
+  <circle cx="55" cy="48" r="3" fill="#555"/>
+  
+  <!-- Rider Legs -->
+  <rect x="45" y="70" width="8" height="20" rx="2" fill="#1a1a1a"/>
+  <rect x="57" y="70" width="8" height="20" rx="2" fill="#1a1a1a"/>
+  
+  <!-- Exhaust Smoke -->
+  <circle cx="15" cy="90" r="4" fill="#888" opacity="0.4"/>
+  <circle cx="8" cy="85" r="3" fill="#888" opacity="0.3"/>
+  <circle cx="3" cy="82" r="2" fill="#888" opacity="0.2"/>
+</svg>

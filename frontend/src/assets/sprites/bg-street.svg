@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <!-- Street Phase Background -->
+  
+  <!-- Sky -->
+  <defs>
+    <linearGradient id="sunset" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B35"/>
+      <stop offset="50%" style="stop-color:#FF8C42"/>
+      <stop offset="100%" style="stop-color:#FFD166"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1920" height="700" fill="url(#sunset)"/>
+  
+  <!-- Sun -->
+  <circle cx="1600" cy="300" r="100" fill="#FFE66D" opacity="0.8"/>
+  <circle cx="1600" cy="300" r="80" fill="#FFF"/>
+  
+  <!-- Buildings Silhouette Background -->
+  <rect x="0" y="400" width="200" height="300" fill="#2d1b0e"/>
+  <rect x="180" y="350" width="150" height="350" fill="#3d2b1e"/>
+  <rect x="320" y="420" width="120" height="280" fill="#2d1b0e"/>
+  <rect x="430" y="380" width="180" height="320" fill="#3d2b1e"/>
+  <rect x="600" y="450" width="100" height="250" fill="#2d1b0e"/>
+  <rect x="690" y="400" width="160" height="300" fill="#3d2b1e"/>
+  <rect x="840" y="430" width="130" height="270" fill="#2d1b0e"/>
+  <rect x="960" y="370" width="200" height="330" fill="#3d2b1e"/>
+  <rect x="1150" y="420" width="150" height="280" fill="#2d1b0e"/>
+  <rect x="1290" y="390" width="180" height="310" fill="#3d2b1e"/>
+  <rect x="1460" y="440" width="120" height="260" fill="#2d1b0e"/>
+  <rect x="1570" y="400" width="170" height="300" fill="#3d2b1e"/>
+  <rect x="1730" y="430" width="200" height="270" fill="#2d1b0e"/>
+  
+  <!-- Windows -->
+  <g fill="#FFD700" opacity="0.3">
+    <rect x="210" y="370" width="15" height="20"/>
+    <rect x="240" y="370" width="15" height="20"/>
+    <rect x="210" y="400" width="15" height="20"/>
+    <rect x="240" y="400" width="15" height="20"/>
+    <rect x="460" y="400" width="15" height="20"/>
+    <rect x="500" y="400" width="15" height="20"/>
+    <rect x="460" y="430" width="15" height="20"/>
+    <rect x="500" y="430" width="15" height="20"/>
+  </g>
+  
+  <!-- Ground/Road -->
+  <rect x="0" y="700" width="1920" height="380" fill="#333"/>
+  
+  <!-- Road Lines -->
+  <rect x="0" y="770" width="1920" height="5" fill="#FFD700"/>
+  <g fill="#FFD700">
+    <rect x="50" y="850" width="80" height="8"/>
+    <rect x="200" y="850" width="80" height="8"/>
+    <rect x="350" y="850" width="80" height="8"/>
+    <rect x="500" y="850" width="80" height="8"/>
+    <rect x="650" y="850" width="80" height="8"/>
+    <rect x="800" y="850" width="80" height="8"/>
+    <rect x="950" y="850" width="80" height="8"/>
+    <rect x="1100" y="850" width="80" height="8"/>
+    <rect x="1250" y="850" width="80" height="8"/>
+    <rect x="1400" y="850" width="80" height="8"/>
+    <rect x="1550" y="850" width="80" height="8"/>
+    <rect x="1700" y="850" width="80" height="8"/>
+    <rect x="1850" y="850" width="80" height="8"/>
+  </g>
+  
+  <!-- Sidewalk -->
+  <rect x="0" y="930" width="1920" height="150" fill="#555"/>
+  <rect x="0" y="930" width="1920" height="5" fill="#666"/>
+  
+  <!-- Graffiti hints -->
+  <text x="100" y="670" font-family="Impact" font-size="40" fill="#FF4444" opacity="0.6">MEL</text>
+  <text x="800" y="680" font-family="Impact" font-size="50" fill="#44FF44" opacity="0.5">GO!</text>
+  <text x="1500" y="670" font-family="Impact" font-size="35" fill="#4444FF" opacity="0.6">KICK</text>
+</svg>
