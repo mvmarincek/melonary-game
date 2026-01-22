@@ -1,9 +1,16 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../hooks/useStore';
 
+let audioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+  if (!audioCtx) audioCtx = new AudioContext();
+  return audioCtx;
+};
+
 const playBark = () => {
   try {
-    const ctx = new AudioContext();
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -11,7 +18,7 @@ const playBark = () => {
     osc.frequency.setValueAtTime(250, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.04);
     osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.1);
@@ -20,7 +27,8 @@ const playBark = () => {
 
 const playScream = () => {
   try {
-    const ctx = new AudioContext();
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -28,7 +36,7 @@ const playScream = () => {
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(800, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
@@ -57,6 +65,7 @@ const CANVAS_HEIGHT = 700;
 const LANE_LEFT_X = 145;
 const LANE_RIGHT_X = 255;
 const SPRITE_SIZE = 60;
+const PHASE_DURATION_MS = 5 * 60 * 1000;
 
 const CITIES = [
   'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
@@ -87,12 +96,6 @@ const CITY_BACKGROUNDS = [
   '/assets/road-losangeles.png'
 ];
 
-const getPhaseGoal = (phase: number) => {
-  const base = 300;
-  const increment = 150;
-  return base + (phase - 1) * increment + Math.floor((phase - 1) / 5) * 100;
-};
-
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { game, setGameState } = useStore();
@@ -103,7 +106,8 @@ export default function GameCanvas() {
   const [isJumping, setIsJumping] = useState(false);
   const [jumpFrame, setJumpFrame] = useState(0);
   const [kickCooldown, setKickCooldown] = useState(false);
-  const [phaseScore, setPhaseScore] = useState(0);
+  const [phaseStartTime, setPhaseStartTime] = useState(Date.now());
+  const [phaseTimeLeft, setPhaseTimeLeft] = useState(PHASE_DURATION_MS);
   
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
@@ -113,7 +117,6 @@ export default function GameCanvas() {
   const motoThinImg = useRef<HTMLImageElement | null>(null);
   const motoFatImg = useRef<HTMLImageElement | null>(null);
   const bgImgs = useRef<HTMLImageElement[]>([]);
-  const muralImg = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     const dog = new Image();
@@ -128,10 +131,6 @@ export default function GameCanvas() {
     fat.src = '/assets/moto-fat-final.png';
     motoFatImg.current = fat;
 
-    const mural = new Image();
-    mural.src = '/assets/mural-bg.jpg';
-    muralImg.current = mural;
-
     CITY_BACKGROUNDS.forEach((bg, i) => {
       const img = new Image();
       img.src = bg;
@@ -139,12 +138,39 @@ export default function GameCanvas() {
     });
   }, []);
 
+  useEffect(() => {
+    setPhaseStartTime(Date.now());
+    setPhaseTimeLeft(PHASE_DURATION_MS);
+  }, [game.phase]);
+
+  useEffect(() => {
+    if (!game.isPlaying || game.isPaused) return;
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - phaseStartTime;
+      const remaining = Math.max(0, PHASE_DURATION_MS - elapsed);
+      setPhaseTimeLeft(remaining);
+      
+      if (remaining <= 0) {
+        setGameState({ phase: game.phase + 1 });
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [game.isPlaying, game.isPaused, game.phase, phaseStartTime, setGameState]);
+
   const currentCityIndex = (game.phase - 1) % CITIES.length;
   const currentCity = CITIES[currentCityIndex];
   const currentBgIndex = (game.phase - 1) % CITY_BACKGROUNDS.length;
-  const phaseGoal = getPhaseGoal(game.phase);
 
   const getLaneX = (lane: 0 | 1) => lane === 0 ? LANE_LEFT_X : LANE_RIGHT_X;
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const spawnMotorcycle = useCallback(() => {
     const lane: 0 | 1 = Math.random() > 0.5 ? 0 : 1;
@@ -178,7 +204,6 @@ export default function GameCanvas() {
       let newScore = game.score;
       let newCombo = game.combo;
       let hitAny = false;
-      let pointsEarned = 0;
 
       const updated = prev.map(m => {
         if (m.hit) return m;
@@ -191,7 +216,6 @@ export default function GameCanvas() {
           newCombo++;
           const points = 100 * newCombo;
           newScore += points;
-          pointsEarned += points;
           playScream();
           
           setTexts(t => [...t, { id: textIdRef.current++, x: playerX, y: m.y, text: `+${points}`, frame: 0 }]);
@@ -202,14 +226,6 @@ export default function GameCanvas() {
 
       if (hitAny) {
         setGameState({ score: newScore, combo: newCombo });
-        
-        const newPhaseScore = phaseScore + pointsEarned;
-        if (newPhaseScore >= phaseGoal) {
-          setPhaseScore(0);
-          setGameState({ phase: game.phase + 1 });
-        } else {
-          setPhaseScore(newPhaseScore);
-        }
       }
       return updated;
     });
@@ -218,7 +234,7 @@ export default function GameCanvas() {
       setIsJumping(false);
       setKickCooldown(false);
     }, 400);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, game.phase, playerLane, playerY, isJumping, phaseGoal, phaseScore, setGameState]);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, isJumping, setGameState]);
 
   const switchLane = useCallback(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -321,18 +337,12 @@ export default function GameCanvas() {
     const render = () => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      if (muralImg.current?.complete && muralImg.current.naturalWidth > 0) {
-        ctx.drawImage(muralImg.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      } else {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      }
+      ctx.fillStyle = '#0a0a14';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
       const bgImg = bgImgs.current[currentBgIndex];
       if (bgImg?.complete && bgImg.naturalWidth > 0) {
-        ctx.globalAlpha = 0.9;
         ctx.drawImage(bgImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        ctx.globalAlpha = 1;
       }
 
       ctx.fillStyle = 'rgba(30, 30, 40, 0.75)';
@@ -428,7 +438,7 @@ export default function GameCanvas() {
         ctx.globalAlpha = 1;
       });
 
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
       ctx.fillRect(0, 0, CANVAS_WIDTH, 52);
       
       ctx.fillStyle = '#FFD700';
@@ -441,13 +451,13 @@ export default function GameCanvas() {
       
       ctx.fillStyle = '#4CAF50';
       ctx.font = 'bold 11px Arial';
-      ctx.fillText(`${phaseScore} / ${phaseGoal}`, 8, 46);
+      ctx.fillText(formatTime(phaseTimeLeft), 8, 46);
       
-      const progress = Math.min(phaseScore / phaseGoal, 1);
+      const progress = 1 - (phaseTimeLeft / PHASE_DURATION_MS);
       ctx.fillStyle = '#333';
-      ctx.fillRect(100, 40, 90, 8);
+      ctx.fillRect(70, 40, 120, 8);
       ctx.fillStyle = '#4CAF50';
-      ctx.fillRect(100, 40, 90 * progress, 8);
+      ctx.fillRect(70, 40, 120 * progress, 8);
       
       ctx.textAlign = 'right';
       ctx.fillStyle = '#FFD700';
@@ -463,21 +473,29 @@ export default function GameCanvas() {
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseGoal, phaseScore]);
+  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen" style={{ background: '#0a0a0a' }}>
-      <div className="p-4 md:p-8 rounded-2xl" style={{ background: '#000', boxShadow: '0 0 60px rgba(255, 215, 0, 0.15)' }}>
+    <div 
+      className="flex flex-col items-center justify-center min-h-screen p-4"
+      style={{ 
+        backgroundImage: 'url(/assets/mural-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="p-4 md:p-8 rounded-2xl" style={{ background: 'rgba(0,0,0,0.95)', boxShadow: '0 0 60px rgba(255, 215, 0, 0.2)' }}>
         <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-4 border-yellow-500/80 rounded-lg" style={{ maxWidth: '100%', boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)' }} />
-      <div className="flex gap-3 mt-4 md:hidden">
-        <div className="flex flex-col gap-1">
-          <button onTouchStart={() => moveVertical('up')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↑</button>
-          <button onTouchStart={() => moveVertical('down')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↓</button>
+        <div className="flex gap-3 mt-4 md:hidden">
+          <div className="flex flex-col gap-1">
+            <button onTouchStart={() => moveVertical('up')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↑</button>
+            <button onTouchStart={() => moveVertical('down')} className="w-14 h-14 bg-black border-2 border-yellow-500/60 rounded-lg text-xl text-yellow-500 active:bg-yellow-500/20">↓</button>
+          </div>
+          <button onTouchStart={switchLane} className="w-16 h-16 bg-black border-2 border-yellow-500/60 rounded-lg text-xs text-yellow-500 self-center active:bg-yellow-500/20 font-bold">TROCA<br/>PISTA</button>
+          <button onTouchStart={() => handleKick()} className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full text-sm font-bold text-black self-center shadow-lg active:scale-95">CHUTE!</button>
         </div>
-        <button onTouchStart={switchLane} className="w-16 h-16 bg-black border-2 border-yellow-500/60 rounded-lg text-xs text-yellow-500 self-center active:bg-yellow-500/20 font-bold">TROCA<br/>PISTA</button>
-        <button onTouchStart={() => handleKick()} className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full text-sm font-bold text-black self-center shadow-lg active:scale-95">CHUTE!</button>
-      </div>
-      <p className="mt-4 text-white/70 text-xs bg-black/70 px-3 py-2 rounded-lg border border-yellow-500/30">ArrowKeys = mover | SPACE = chute voador</p>
+        <p className="mt-4 text-white/70 text-xs bg-black/70 px-3 py-2 rounded-lg border border-yellow-500/30 text-center">ArrowKeys = mover | SPACE = chute voador</p>
       </div>
     </div>
   );
