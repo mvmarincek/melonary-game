@@ -222,11 +222,13 @@ export default function GameCanvas() {
 
   const switchLane = useCallback(() => {
     if (!game.isPlaying || game.isPaused) return;
+    playBark();
     setPlayerLane(prev => prev === 0 ? 1 : 0);
   }, [game.isPlaying, game.isPaused]);
 
   const moveVertical = useCallback((dir: 'up' | 'down') => {
     if (!game.isPlaying || game.isPaused) return;
+    playBark();
     const step = 40;
     if (dir === 'up') setPlayerY(p => Math.max(80, p - step));
     else setPlayerY(p => Math.min(CANVAS_HEIGHT - 60, p + step));
