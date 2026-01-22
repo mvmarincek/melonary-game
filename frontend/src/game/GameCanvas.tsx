@@ -1,6 +1,23 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../hooks/useStore';
 
+const playBark = () => {
+  if (typeof window !== 'undefined' && window.AudioContext) {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.05);
+    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  }
+};
+
 interface Motorcycle {
   id: number;
   lane: number;
@@ -132,21 +149,21 @@ export default function GameCanvas() {
       x,
       y,
       frame: 0,
-      maxFrames: 15,
+      maxFrames: 10,
     };
     setExplosions((prev) => [...prev, newExplosion]);
 
     const newParticles: Particle[] = [];
-    for (let i = 0; i < 20; i++) {
-      const angle = (Math.PI * 2 * i) / 20;
-      const speed = 3 + Math.random() * 5;
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      const speed = 2 + Math.random() * 3;
       newParticles.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        size: 3 + Math.random() * 5,
-        color: ['#FF4500', '#FFD700', '#FF6347', '#FFA500', '#FF0000'][Math.floor(Math.random() * 5)],
+        size: 2 + Math.random() * 3,
+        color: ['#FF4500', '#FFD700', '#FFA500'][Math.floor(Math.random() * 3)],
         life: 1,
       });
     }
@@ -244,6 +261,8 @@ export default function GameCanvas() {
 
   const movePlayer = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
     if (!game.isPlaying || game.isPaused) return;
+
+    playBark();
 
     if (direction === 'left') {
       setPlayerLane((prev) => Math.max(0, prev - 1));
