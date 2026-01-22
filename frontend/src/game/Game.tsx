@@ -7,7 +7,7 @@ import GameCanvas from './GameCanvas';
 import GameUI from './GameUI';
 import GameOver from './GameOver';
 import { t } from '../i18n/translations';
-import { SolanaLogo, ContractBanner, StoreButton } from '../components/TokenFooter';
+import { SolanaLogo, ContractBanner } from '../components/TokenFooter';
 
 interface GameResults {
   finalScore: number;
@@ -86,68 +86,72 @@ export default function Game() {
 
   if (!game.isPlaying && !gameResults) {
     return (
-      <div className="min-h-screen flex items-center justify-center relative" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
-        <div className="absolute top-4 right-4 z-20">
-          <SolanaLogo size={50} />
+      <div className="bg-page flex flex-col items-center justify-center p-4 safe-top safe-bottom relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-gradient-to-br from-yellow-500/15 to-orange-500/10 rounded-full blur-3xl animate-pulse-glow" />
         </div>
 
-        <div className="max-w-md w-full mx-4 text-center">
-          <div className="rounded-2xl border-2 border-yellow-500/20 p-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
-            <h1 className="text-3xl font-black mb-8" style={{ color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.4)' }}>
+        <header className="absolute top-4 right-4 z-20">
+          <SolanaLogo size={44} />
+        </header>
+
+        <main className="relative z-10 w-full max-w-sm text-center animate-slide-up">
+          <div className="card p-6">
+            <h1 className="font-game text-2xl text-glow-gold mb-6" style={{ color: '#FFD700' }}>
               {t('game.title', language)}
             </h1>
 
-            <div className="mb-8">
-              <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-yellow-500/50 mb-4" style={{ boxShadow: '0 0 40px rgba(255, 215, 0, 0.3)' }}>
-                <img 
-                  src="/assets/dog-final.png" 
-                  alt="Melonary"
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+            <div className="mb-6">
+              <div className="avatar-ring w-28 h-28 mx-auto mb-4">
+                <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+                  <img 
+                    src="/assets/dog-final.png" 
+                    alt="Melonary"
+                    className="w-full h-full object-contain animate-float"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
               </div>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-500 text-sm">
                 {t('game.tap_to_kick', language)}
               </p>
             </div>
 
-            <button
-              onClick={startGame}
-              disabled={isLoading}
-              className="w-full py-5 rounded-xl font-bold text-xl transition-all duration-300 hover:scale-105 active:scale-95 mb-4"
-              style={{ 
-                background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)', 
-                color: '#1a1a2e',
-                boxShadow: '0 0 30px rgba(255, 215, 0, 0.4)'
-              }}
-            >
-              {isLoading ? t('game.loading', language) : t('game.start', language)}
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={startGame}
+                disabled={isLoading}
+                className="btn-primary w-full text-lg glow-gold disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    {t('game.loading', language)}
+                  </span>
+                ) : t('game.start', language)}
+              </button>
 
-            <button 
-              onClick={() => navigate('/')} 
-              className="w-full py-3 rounded-xl font-bold border-2 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-all"
-              style={{ background: 'rgba(0,0,0,0.4)' }}
-            >
-              {t('game.quit', language)}
-            </button>
+              <button 
+                onClick={() => navigate('/')} 
+                className="btn-secondary w-full"
+              >
+                {t('game.quit', language)}
+              </button>
+            </div>
 
-            <div className="mt-4">
+            <div className="mt-5">
               <ContractBanner size="small" />
             </div>
-            <div className="flex justify-center mt-2">
-              <StoreButton size="small" />
-            </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="game-container" style={{ background: '#0a0a0a' }}>
+    <div className="game-container">
       <GameCanvas />
       
       {game.isPlaying && !game.isPaused && (
@@ -155,28 +159,22 @@ export default function Game() {
       )}
 
       {game.isPaused && (
-        <div className="absolute inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.85)' }}>
-          <div className="max-w-sm w-full mx-4 text-center">
-            <div className="rounded-2xl border-2 border-yellow-500/20 p-8" style={{ background: 'rgba(0,0,0,0.8)' }}>
-              <h2 className="text-3xl font-black mb-8" style={{ color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.4)' }}>
+        <div className="absolute inset-0 flex items-center justify-center z-50 glass-dark">
+          <div className="w-full max-w-xs mx-4 text-center animate-slide-up">
+            <div className="card p-6">
+              <h2 className="font-game text-xl text-glow-gold mb-6" style={{ color: '#FFD700' }}>
                 {t('game.pause', language)}
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button 
                   onClick={resumeGame} 
-                  className="w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95"
-                  style={{ 
-                    background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)', 
-                    color: '#1a1a2e',
-                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
-                  }}
+                  className="btn-primary w-full glow-gold"
                 >
                   {t('game.resume', language)}
                 </button>
                 <button 
                   onClick={endGame} 
-                  className="w-full py-3 rounded-xl font-bold border-2 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-all"
-                  style={{ background: 'rgba(0,0,0,0.4)' }}
+                  className="btn-secondary w-full"
                 >
                   {t('game.quit', language)}
                 </button>

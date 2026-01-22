@@ -30,77 +30,154 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen p-4 pb-8" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
-      <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Link to="/" className="text-yellow-500 hover:text-yellow-300 text-sm font-bold transition-colors">&larr; Voltar</Link>
-          <h1 className="text-2xl font-black" style={{ color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.4)' }}>{t('menu.settings', language)}</h1>
-          <SolanaLogo size={40} />
-        </div>
+    <div className="bg-page flex flex-col p-4 safe-top safe-bottom">
+      <div className="max-w-md mx-auto w-full">
+        <header className="flex items-center justify-between mb-6">
+          <Link to="/" className="btn-ghost text-yellow-500 text-sm flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </Link>
+          <h1 className="font-game text-lg text-glow-gold" style={{ color: '#FFD700' }}>
+            {t('menu.settings', language)}
+          </h1>
+          <SolanaLogo size={36} />
+        </header>
 
-        <div className="rounded-2xl border-2 border-yellow-500/20 p-5 space-y-5" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">{t('settings.language', language)}</label>
-            <div className="flex gap-2">
+        <div className="space-y-4">
+          <div className="card animate-slide-up">
+            <h3 className="text-sm text-gray-400 mb-4 font-medium flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {t('settings.language', language)}
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
               {(['en', 'pt', 'es'] as Language[]).map((lang) => (
                 <button
                   key={lang}
                   onClick={() => setLanguage(lang)}
-                  className={`flex-1 py-2 rounded-xl font-bold transition-all ${language === lang ? 'text-black' : 'text-yellow-400 border-2 border-yellow-500/30'}`}
-                  style={language === lang ? { background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)' } : { background: 'rgba(0,0,0,0.4)' }}
+                  className={`py-3 rounded-xl font-bold text-sm transition-all ${
+                    language === lang 
+                      ? 'btn-primary' 
+                      : 'bg-gray-800 text-gray-400 border border-gray-700'
+                  }`}
                 >
-                  {lang === 'en' ? 'EN' : lang === 'pt' ? 'PT' : 'ES'}
+                  {lang === 'en' ? 'English' : lang === 'pt' ? 'Portugues' : 'Espanol'}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-2">
-            <span className="text-gray-300">{t('settings.sound', language)}</span>
+          <div className="card animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <h3 className="text-sm text-gray-400 mb-4 font-medium flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+              {t('settings.sound', language)}
+            </h3>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-800">
+              <span className="text-white font-medium">Ativar Som</span>
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`w-14 h-8 rounded-full transition-all relative ${soundEnabled ? 'glow-gold' : ''}`}
+                style={{ background: soundEnabled ? 'linear-gradient(90deg, #FFD700, #FFA500)' : '#2a2a3a' }}
+              >
+                <div 
+                  className="w-6 h-6 bg-white rounded-full shadow-lg absolute top-1 transition-all duration-200" 
+                  style={{ left: soundEnabled ? '28px' : '4px' }} 
+                />
+              </button>
+            </div>
+
+            <div className="py-4 border-b border-gray-800">
+              <div className="flex justify-between mb-3">
+                <span className="text-gray-400 text-sm">{t('settings.music', language)}</span>
+                <span className="text-yellow-400 font-bold text-sm">{Math.round(musicVolume * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.1" 
+                value={musicVolume} 
+                onChange={(e) => setMusicVolume(parseFloat(e.target.value))} 
+                disabled={!soundEnabled} 
+                className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50" 
+                style={{ background: `linear-gradient(90deg, #FFD700 0%, #FFD700 ${musicVolume * 100}%, #2a2a3a ${musicVolume * 100}%, #2a2a3a 100%)` }} 
+              />
+            </div>
+
+            <div className="py-4">
+              <div className="flex justify-between mb-3">
+                <span className="text-gray-400 text-sm">{t('settings.sfx', language)}</span>
+                <span className="text-yellow-400 font-bold text-sm">{Math.round(sfxVolume * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.1" 
+                value={sfxVolume} 
+                onChange={(e) => setSfxVolume(parseFloat(e.target.value))} 
+                disabled={!soundEnabled} 
+                className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50" 
+                style={{ background: `linear-gradient(90deg, #FFD700 0%, #FFD700 ${sfxVolume * 100}%, #2a2a3a ${sfxVolume * 100}%, #2a2a3a 100%)` }} 
+              />
+            </div>
+
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="w-14 h-8 rounded-full transition-all relative"
-              style={{ background: soundEnabled ? 'linear-gradient(90deg, #FFD700 0%, #FFA500 100%)' : '#333' }}
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`w-full mt-2 py-3 rounded-xl font-bold transition-all ${saved ? 'bg-green-500 text-white' : 'btn-primary'} disabled:opacity-50`}
             >
-              <div className="w-6 h-6 bg-white rounded-full shadow absolute top-1 transition-all" style={{ left: soundEnabled ? '30px' : '4px' }} />
+              {isSaving ? t('game.loading', language) : saved ? 'Salvo!' : t('settings.save', language)}
             </button>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">{t('settings.music', language)}: <span className="text-yellow-400">{Math.round(musicVolume * 100)}%</span></label>
-            <input type="range" min="0" max="1" step="0.1" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} disabled={!soundEnabled} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(90deg, #FFD700 0%, #FFD700 ${musicVolume * 100}%, #333 ${musicVolume * 100}%, #333 100%)` }} />
-          </div>
+          {user && (
+            <div className="card animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <h3 className="text-sm text-gray-400 mb-4 font-medium flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {t('menu.profile', language)}
+              </h3>
+              
+              <div className="flex items-center gap-4 pb-4 border-b border-gray-800">
+                <div className="avatar-ring">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black text-xl font-bold">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-white font-bold text-lg">{user.username}</p>
+                  <p className="text-gray-500 text-sm">{user.email}</p>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">{t('settings.sfx', language)}: <span className="text-yellow-400">{Math.round(sfxVolume * 100)}%</span></label>
-            <input type="range" min="0" max="1" step="0.1" value={sfxVolume} onChange={(e) => setSfxVolume(parseFloat(e.target.value))} disabled={!soundEnabled} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(90deg, #FFD700 0%, #FFD700 ${sfxVolume * 100}%, #333 ${sfxVolume * 100}%, #333 100%)` }} />
-          </div>
-
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full py-3 rounded-xl font-bold text-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: saved ? 'linear-gradient(180deg, #4CAF50 0%, #388E3C 100%)' : 'linear-gradient(180deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e' }}
-          >
-            {isSaving ? t('game.loading', language) : saved ? 'Salvo!' : t('settings.save', language)}
-          </button>
-        </div>
-
-        {user && (
-          <div className="rounded-2xl border-2 border-yellow-500/20 p-5 mt-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-            <h3 className="text-sm text-gray-400 mb-3 font-bold">{t('menu.profile', language)}</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between py-2 border-b border-gray-700/30"><span className="text-gray-500">Username</span><span className="text-white font-bold">{user.username}</span></div>
-              <div className="flex justify-between py-2 border-b border-gray-700/30"><span className="text-gray-500">Email</span><span className="text-white">{user.email}</span></div>
-              <div className="flex justify-between py-2 border-b border-gray-700/30"><span className="text-gray-500">{t('game.score', language)}</span><span className="text-yellow-400 font-black">{user.total_score.toLocaleString()}</span></div>
-              <div className="flex justify-between py-2 border-b border-gray-700/30"><span className="text-gray-500">Partidas</span><span className="text-white font-bold">{user.games_played}</span></div>
-              <div className="flex justify-between py-2"><span className="text-gray-500">Melhor Combo</span><span className="text-orange-400 font-bold">{user.highest_combo}x</span></div>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="text-center p-3 rounded-xl bg-gray-800/50">
+                  <p className="text-yellow-400 font-bold text-lg text-glow-sm">{user.total_score.toLocaleString()}</p>
+                  <p className="text-gray-500 text-xs">Score</p>
+                </div>
+                <div className="text-center p-3 rounded-xl bg-gray-800/50">
+                  <p className="text-white font-bold text-lg">{user.games_played}</p>
+                  <p className="text-gray-500 text-xs">Partidas</p>
+                </div>
+                <div className="text-center p-3 rounded-xl bg-gray-800/50">
+                  <p className="text-orange-400 font-bold text-lg">{user.highest_combo}x</p>
+                  <p className="text-gray-500 text-xs">Combo</p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="mt-6">
-          <ContractBanner size="normal" />
+          <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <ContractBanner size="small" />
+          </div>
         </div>
       </div>
     </div>
