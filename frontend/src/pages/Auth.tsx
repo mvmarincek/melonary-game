@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
-import TokenFooter from '../components/TokenFooter';
+import { SolanaLogo, ContractBanner } from '../components/TokenFooter';
 
 type AuthMode = 'login' | 'register';
 
@@ -71,6 +71,10 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
+      <div className="absolute top-4 right-4 z-20">
+        <SolanaLogo size={50} />
+      </div>
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-10 left-10 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
@@ -257,8 +261,11 @@ export default function Auth() {
             ))}
           </div>
         </div>
+
+        <div className="mt-6">
+          <ContractBanner size="small" />
+        </div>
       </div>
-      <TokenFooter />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import GameCanvas from './GameCanvas';
 import GameUI from './GameUI';
 import GameOver from './GameOver';
 import { t } from '../i18n/translations';
-import TokenFooter from '../components/TokenFooter';
+import { SolanaLogo, ContractBanner, StoreButton } from '../components/TokenFooter';
 
 interface GameResults {
   finalScore: number;
@@ -86,7 +86,11 @@ export default function Game() {
 
   if (!game.isPlaying && !gameResults) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center relative" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)' }}>
+        <div className="absolute top-4 right-4 z-20">
+          <SolanaLogo size={50} />
+        </div>
+
         <div className="max-w-md w-full mx-4 text-center">
           <div className="rounded-2xl border-2 border-yellow-500/20 p-8" style={{ background: 'rgba(0,0,0,0.6)' }}>
             <h1 className="text-3xl font-black mb-8" style={{ color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.4)' }}>
@@ -129,9 +133,15 @@ export default function Game() {
             >
               {t('game.quit', language)}
             </button>
+
+            <div className="mt-4">
+              <ContractBanner size="small" />
+            </div>
+            <div className="flex justify-center mt-2">
+              <StoreButton size="small" />
+            </div>
           </div>
         </div>
-        <TokenFooter />
       </div>
     );
   }
