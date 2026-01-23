@@ -484,12 +484,16 @@ export default function GameCanvas() {
       ctx.fillText(`${game.score}`, Math.round(12 * SCALE), Math.round(34 * SCALE));
       
       ctx.textAlign = 'center';
-      ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(20 * SCALE)}px Arial`;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(currentCity, CANVAS_WIDTH / 2, Math.round(24 * SCALE));
       ctx.fillStyle = '#FFD700';
-      ctx.fillText(currentCity, CANVAS_WIDTH / 2, Math.round(22 * SCALE));
-      ctx.font = `${Math.round(11 * SCALE)}px Arial`;
+      ctx.fillText(currentCity, CANVAS_WIDTH / 2, Math.round(24 * SCALE));
+      ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
+      ctx.strokeText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(46 * SCALE));
       ctx.fillStyle = '#4CAF50';
-      ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(40 * SCALE));
+      ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(46 * SCALE));
       
       ctx.textAlign = 'right';
       ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
