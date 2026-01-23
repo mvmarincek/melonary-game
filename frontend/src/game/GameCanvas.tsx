@@ -565,9 +565,11 @@ export default function GameCanvas() {
       ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
-      ctx.strokeText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
-      ctx.fillStyle = '#FFD700';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
+      const comboText = game.combo > 0 ? `${game.combo}x` : '0x';
+      const comboColor = game.combo >= 20 ? '#FF4444' : game.combo >= 10 ? '#FF8844' : game.combo >= 3 ? '#FFD700' : '#888';
+      ctx.strokeText(comboText, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
+      ctx.fillStyle = comboColor;
+      ctx.fillText(comboText, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
       
       if (comboDisplay.visible && comboDisplay.value >= 3) {
         const comboAlpha = Math.min(1, (30 - comboDisplay.frame) / 10);
