@@ -648,21 +648,21 @@ export default function GameCanvas() {
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-3"
+              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
             >
-              <svg className="w-8 h-8" viewBox="0 0 100 100" fill="black">
-                <ellipse cx="50" cy="75" rx="25" ry="20"/>
-                <ellipse cx="22" cy="40" rx="12" ry="15"/>
-                <ellipse cx="42" cy="28" rx="10" ry="14"/>
-                <ellipse cx="58" cy="28" rx="10" ry="14"/>
-                <ellipse cx="78" cy="40" rx="12" ry="15"/>
+              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
+                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
+                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
+                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
+                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
+                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
               </svg>
-              <svg className="w-8 h-8" viewBox="0 0 100 100" fill="black">
-                <ellipse cx="50" cy="75" rx="25" ry="20"/>
-                <ellipse cx="22" cy="40" rx="12" ry="15"/>
-                <ellipse cx="42" cy="28" rx="10" ry="14"/>
-                <ellipse cx="58" cy="28" rx="10" ry="14"/>
-                <ellipse cx="78" cy="40" rx="12" ry="15"/>
+              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
+                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
+                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
+                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
+                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
+                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
               </svg>
             </button>
           </div>
