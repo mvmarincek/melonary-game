@@ -4,10 +4,9 @@ import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { audioManager } from '../services/audio';
 import GameCanvas from './GameCanvas';
-import GameUI from './GameUI';
 import GameOver from './GameOver';
 import { t } from '../i18n/translations';
-import { SolanaLogo, ContractBanner } from '../components/TokenFooter';
+import { MelonaryLogo, ContractBanner } from '../components/TokenFooter';
 
 interface GameResults {
   finalScore: number;
@@ -92,7 +91,7 @@ export default function Game() {
         </div>
 
         <header className="absolute top-4 right-4 z-20">
-          <SolanaLogo size={44} />
+          <MelonaryLogo size={44} />
         </header>
 
         <main className="relative z-10 w-full max-w-sm text-center animate-slide-up">
@@ -153,10 +152,6 @@ export default function Game() {
   return (
     <div className="game-container">
       <GameCanvas />
-      
-      {game.isPlaying && !game.isPaused && (
-        <GameUI onPause={pauseGame} onQuit={endGame} />
-      )}
 
       {game.isPaused && (
         <div className="absolute inset-0 flex items-center justify-center z-50 glass-dark">
