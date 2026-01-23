@@ -632,49 +632,47 @@ export default function GameCanvas() {
           <div className="flex flex-col gap-1 flex-1">
             <button 
               onTouchStart={() => moveVertical('up')} 
-              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
+              className="h-10 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
             >
               ↑
             </button>
             <button 
-              onTouchStart={() => moveVertical('down')} 
-              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
-            >
-              ↓
-            </button>
-          </div>
-          <div className="flex-[2] flex flex-col gap-1">
-            <button 
               onTouchStart={switchLane} 
-              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-yellow-500 font-bold active:bg-yellow-500/30 flex items-center justify-center gap-2"
+              className="h-10 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-yellow-500 font-bold active:bg-yellow-500/30 flex items-center justify-center"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
               </svg>
             </button>
             <button 
-              onTouchStart={() => handleKick()} 
-              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
+              onTouchStart={() => moveVertical('down')} 
+              className="h-10 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
             >
-              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
-                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
-                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
-                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
-                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
-                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
-              </svg>
-              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
-                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
-                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
-                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
-                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
-                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
-              </svg>
+              ↓
             </button>
           </div>
           <button 
+            onTouchStart={() => handleKick()} 
+            className="flex-[2] bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
+          >
+            <svg className="w-12 h-12" viewBox="0 0 100 100" fill="black">
+              <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
+              <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
+              <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
+              <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
+              <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
+            </svg>
+            <svg className="w-12 h-12" viewBox="0 0 100 100" fill="black">
+              <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
+              <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
+              <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
+              <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
+              <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
+            </svg>
+          </button>
+          <button 
             onClick={() => setGameState({ isPaused: true })}
-            className="h-[90px] w-10 bg-red-600/80 border-2 border-red-400/60 rounded-xl text-white font-bold active:bg-red-500 flex items-center justify-center"
+            className="w-10 bg-red-600/80 border-2 border-red-400/60 rounded-xl text-white font-bold active:bg-red-500 flex items-center justify-center"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
