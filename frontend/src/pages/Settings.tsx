@@ -4,7 +4,7 @@ import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
 import { audioManager } from '../services/audio';
-import { ContractBanner, SolanaLogo } from '../components/TokenFooter';
+import { ContractBanner, SolanaLogo, MelonaryLogo } from '../components/TokenFooter';
 
 export default function Settings() {
   const { language, setLanguage, soundEnabled, setSoundEnabled, musicVolume, setMusicVolume, sfxVolume, setSfxVolume, user } = useStore();
@@ -42,7 +42,7 @@ export default function Settings() {
           <h1 className="font-game text-lg text-glow-gold" style={{ color: '#FFD700' }}>
             {t('menu.settings', language)}
           </h1>
-          <SolanaLogo size={36} />
+          <MelonaryLogo size={44} />
         </header>
 
         <div className="space-y-4">

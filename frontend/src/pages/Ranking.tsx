@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t } from '../i18n/translations';
-import { ContractBanner, SolanaLogo } from '../components/TokenFooter';
+import { ContractBanner, SolanaLogo, MelonaryLogo } from '../components/TokenFooter';
 
 interface RankingEntry {
   position: number;
@@ -56,7 +56,7 @@ export default function Ranking() {
           <h1 className="font-game text-lg text-glow-gold" style={{ color: '#FFD700' }}>
             {t('menu.ranking', language)}
           </h1>
-          <SolanaLogo size={36} />
+          <MelonaryLogo size={44} />
         </header>
 
         <div className="grid grid-cols-2 gap-2 mb-4">

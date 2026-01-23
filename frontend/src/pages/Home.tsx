@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { t } from '../i18n/translations';
-import { ContractBanner, StoreButton, SolanaLogo } from '../components/TokenFooter';
+import { ContractBanner, MelonaryLogo, SocialButtons } from '../components/TokenFooter';
 
 export default function Home() {
   const { user, language, logout } = useStore();
@@ -13,39 +13,20 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/50 to-transparent" />
       </div>
 
-      <header className="relative z-10 w-full flex justify-between items-start pt-2">
-        <div className="badge badge-gold">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          Solana
-        </div>
-        <SolanaLogo size={48} />
+      <header className="relative z-10 w-full flex justify-end items-start pt-2">
+        <SocialButtons />
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-sm py-6">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/30 to-orange-500/20 rounded-full blur-2xl scale-125 animate-pulse-glow" />
-          <div className="avatar-ring">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-              <img 
-                src="/melonary-hero.png" 
-                alt="Melonary"
-                className="w-full h-full object-contain animate-float"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-          </div>
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-sm py-4">
+        <div className="relative mb-4">
+          <MelonaryLogo size={140} />
         </div>
         
-        <h1 className="font-game text-3xl sm:text-4xl text-center mb-2 text-glow-gold" style={{ color: '#FFD700' }}>
-          MELONARY
-        </h1>
-        <p className="text-lg font-bold text-orange-400 mb-1">Flying Kick!</p>
+        <p className="text-xl font-bold text-orange-400 mb-1">Flying Kick!</p>
         <p className="text-gray-500 text-sm text-center mb-6">Derrube os motoqueiros com voadoras!</p>
 
         {user && (
-          <div className="card-highlight w-full mb-6 text-center animate-slide-up">
+          <div className="card-highlight w-full mb-5 text-center animate-slide-up">
             <div className="flex items-center justify-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black font-bold">
                 {user.username.charAt(0).toUpperCase()}
@@ -100,15 +81,8 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="relative z-10 w-full max-w-sm space-y-3 pb-2">
-        <ContractBanner size="normal" />
-        <div className="flex justify-center">
-          <StoreButton size="small" />
-        </div>
-        <div className="flex justify-center gap-4 text-xs text-gray-600 mt-2">
-          <span><kbd className="px-2 py-1 rounded bg-gray-800 text-gray-400">Setas</kbd> Mover</span>
-          <span><kbd className="px-2 py-1 rounded bg-gray-800 text-gray-400">Espaco</kbd> Voadora</span>
-        </div>
+      <footer className="relative z-10 w-full max-w-sm pb-2">
+        <ContractBanner size="large" />
       </footer>
     </div>
   );

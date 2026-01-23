@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
-import { SolanaLogo } from '../components/TokenFooter';
+import { SolanaLogo, MelonaryLogo } from '../components/TokenFooter';
 
 type AuthMode = 'login' | 'register';
 
@@ -81,7 +81,7 @@ export default function Auth() {
           </svg>
           Voltar
         </Link>
-        <SolanaLogo size={40} />
+        <MelonaryLogo size={48} />
       </header>
 
       <main className="relative z-10 w-full max-w-sm animate-slide-up">

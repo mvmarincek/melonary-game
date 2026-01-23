@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../hooks/useStore';
+import { GameFooter } from '../components/TokenFooter';
 
 let audioCtx: AudioContext | null = null;
 const getAudioContext = () => {
@@ -161,6 +162,7 @@ export default function GameCanvas() {
   const [kickCooldown, setKickCooldown] = useState(false);
   const [phaseStartTime, setPhaseStartTime] = useState(Date.now());
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(PHASE_DURATION_MS);
+  const [comboDisplay, setComboDisplay] = useState({ value: 0, visible: false, frame: 0 });
   
   const lastSpawnRef = useRef(0);
   const motoIdRef = useRef(0);
@@ -265,7 +267,12 @@ export default function GameCanvas() {
         return m;
       });
 
-      if (hitAny) setGameState({ score: newScore, combo: newCombo });
+      if (hitAny) {
+        setGameState({ score: newScore, combo: newCombo });
+        if (newCombo >= 3) {
+          setComboDisplay({ value: newCombo, visible: true, frame: 0 });
+        }
+      }
       return updated;
     });
 
@@ -320,6 +327,18 @@ export default function GameCanvas() {
       return () => clearInterval(interval);
     }
   }, [isJumping]);
+
+  useEffect(() => {
+    if (comboDisplay.visible) {
+      const interval = setInterval(() => {
+        setComboDisplay(prev => {
+          if (prev.frame >= 30) return { ...prev, visible: false };
+          return { ...prev, frame: prev.frame + 1 };
+        });
+      }, 50);
+      return () => clearInterval(interval);
+    }
+  }, [comboDisplay.visible]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -428,64 +447,67 @@ export default function GameCanvas() {
         ctx.globalAlpha = 1;
       });
 
-      const hudHeight = Math.round(65 * SCALE);
+      const hudHeight = Math.round(50 * SCALE);
       ctx.fillStyle = 'rgba(0,0,0,0.92)';
       ctx.fillRect(0, 0, CANVAS_WIDTH, hudHeight);
       
-      ctx.font = `bold ${Math.round(18 * SCALE)}px Arial`;
       ctx.textAlign = 'left';
+      ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(`${game.score}`, Math.round(12 * SCALE), Math.round(34 * SCALE));
       ctx.fillStyle = '#FFD700';
-      ctx.fillText(currentCity, Math.round(12 * SCALE), Math.round(24 * SCALE));
+      ctx.fillText(`${game.score}`, Math.round(12 * SCALE), Math.round(34 * SCALE));
       
-      ctx.font = `${Math.round(12 * SCALE)}px Arial`;
-      ctx.fillStyle = '#888';
-      ctx.fillText(`Fase ${game.phase}`, Math.round(12 * SCALE), Math.round(42 * SCALE));
-      
+      ctx.textAlign = 'center';
       ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(currentCity, CANVAS_WIDTH / 2, Math.round(22 * SCALE));
+      ctx.font = `${Math.round(11 * SCALE)}px Arial`;
       ctx.fillStyle = '#4CAF50';
-      ctx.fillText(formatTime(phaseTimeLeft), Math.round(12 * SCALE), Math.round(60 * SCALE));
-      
-      const barX = Math.round(100 * SCALE);
-      const barWidth = Math.round(120 * SCALE);
-      const progress = 1 - (phaseTimeLeft / PHASE_DURATION_MS);
-      ctx.fillStyle = '#222';
-      ctx.fillRect(barX, Math.round(52 * SCALE), barWidth, Math.round(8 * SCALE));
-      ctx.fillStyle = '#4CAF50';
-      ctx.fillRect(barX, Math.round(52 * SCALE), barWidth * progress, Math.round(8 * SCALE));
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, Math.round(52 * SCALE), barWidth, Math.round(8 * SCALE));
+      ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(40 * SCALE));
       
       ctx.textAlign = 'right';
-      ctx.font = `bold ${Math.round(32 * SCALE)}px Arial`;
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 4;
-      ctx.strokeText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(36 * SCALE));
-      ctx.fillStyle = '#FFD700';
-      ctx.fillText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(36 * SCALE));
+      ctx.font = `bold ${Math.round(12 * SCALE)}px Arial`;
+      ctx.fillStyle = '#FF6347';
+      ctx.fillText('SAIR', CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(32 * SCALE));
       
-      if (game.combo > 1) {
-        ctx.font = `bold ${Math.round(18 * SCALE)}px Arial`;
+      if (comboDisplay.visible && comboDisplay.value >= 3) {
+        const comboAlpha = Math.min(1, (30 - comboDisplay.frame) / 10);
+        const comboY = Math.round(120 * SCALE) + comboDisplay.frame * 1.5;
+        const comboColor = comboDisplay.value >= 20 ? '#FF4444' : comboDisplay.value >= 10 ? '#FF8844' : '#FFD700';
+        const comboSize = Math.round(28 * SCALE) + Math.min(comboDisplay.value, 30);
+        ctx.globalAlpha = Math.max(0, comboAlpha);
+        ctx.font = `bold ${comboSize}px Arial`;
+        ctx.textAlign = 'center';
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.strokeText(`${game.combo}x COMBO`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(58 * SCALE));
-        ctx.fillStyle = game.combo >= 20 ? '#FF4444' : game.combo >= 10 ? '#FF8844' : '#FF6347';
-        ctx.fillText(`${game.combo}x COMBO`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(58 * SCALE));
+        ctx.lineWidth = 5;
+        ctx.strokeText(`${comboDisplay.value}x COMBO!`, CANVAS_WIDTH / 2, comboY);
+        ctx.fillStyle = comboColor;
+        ctx.fillText(`${comboDisplay.value}x COMBO!`, CANVAS_WIDTH / 2, comboY);
+        if (comboDisplay.value >= 10) {
+          const label = comboDisplay.value >= 30 ? 'LENDARIO!' : comboDisplay.value >= 20 ? 'INSANO!' : 'EM CHAMAS!';
+          ctx.font = `bold ${Math.round(16 * SCALE)}px Arial`;
+          ctx.strokeText(label, CANVAS_WIDTH / 2, comboY + Math.round(25 * SCALE));
+          ctx.fillText(label, CANVAS_WIDTH / 2, comboY + Math.round(25 * SCALE));
+        }
+        ctx.globalAlpha = 1;
       }
 
       animId = requestAnimationFrame(render);
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft]);
+  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft, comboDisplay]);
 
   return (
     <div 
-      className="flex flex-col items-center justify-center min-h-screen p-2 sm:p-4" 
+      className="flex flex-col items-center min-h-screen p-2 sm:p-4 overflow-y-auto" 
       style={{ 
         backgroundImage: 'url(/assets/mural-bg.jpg)', 
         backgroundSize: 'cover', 
-        backgroundPosition: 'center' 
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
       }}
     >
       <div 
@@ -501,7 +523,7 @@ export default function GameCanvas() {
           height={CANVAS_HEIGHT} 
           className="border-2 border-yellow-500/50 rounded-lg w-full"
           style={{ 
-            maxHeight: 'calc(100vh - 160px)',
+            maxHeight: 'calc(100vh - 280px)',
             aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
@@ -535,6 +557,8 @@ export default function GameCanvas() {
         <p className="mt-2 text-white/50 text-xs text-center hidden sm:block">
           Setas = mover | ESPACO = voadora
         </p>
+        
+        <GameFooter />
       </div>
     </div>
   );
