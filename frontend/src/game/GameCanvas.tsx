@@ -202,7 +202,6 @@ export default function GameCanvas() {
   const COMBO_TIMEOUT_MS = 2500;
   
   const dogImg = useRef<HTMLImageElement | null>(null);
-  const dogKickImg = useRef<HTMLImageElement | null>(null);
   const motoThinImg = useRef<HTMLImageElement | null>(null);
   const motoFatImg = useRef<HTMLImageElement | null>(null);
   const bgImgs = useRef<HTMLImageElement[]>([]);
@@ -211,9 +210,6 @@ export default function GameCanvas() {
     const dog = new Image();
     dog.src = '/assets/dog-final.png';
     dogImg.current = dog;
-    const dogKick = new Image();
-    dogKick.src = '/assets/dog-kick.svg';
-    dogKickImg.current = dogKick;
     const thin = new Image();
     thin.src = '/assets/moto-thin-final.png';
     motoThinImg.current = thin;
@@ -449,10 +445,15 @@ export default function GameCanvas() {
       ctx.translate(playerX, drawY);
       ctx.rotate(rotation);
       if (playerLane === 1) ctx.scale(-1, 1);
-      
-      const currentDogImg = isJumping && jumpFrame > 1 && jumpFrame < 9 ? dogKickImg.current : dogImg.current;
-      if (currentDogImg?.complete) {
-        ctx.drawImage(currentDogImg, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+      if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+      if (isJumping && jumpFrame > 2 && jumpFrame < 8) {
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(Math.round(20 * SCALE), -Math.round(5 * SCALE));
+        ctx.lineTo(Math.round(38 * SCALE), 0);
+        ctx.lineTo(Math.round(20 * SCALE), Math.round(5 * SCALE));
+        ctx.closePath();
+        ctx.fill();
       }
       ctx.restore();
 
