@@ -58,8 +58,8 @@ export const api = {
     kick: (data: { sessionId: string; timing: 'miss' | 'hit' | 'perfect'; enemyType?: string }) =>
       fetchAPI('/game/kick', { method: 'POST', body: JSON.stringify(data) }),
     
-    end: (sessionId: string) =>
-      fetchAPI('/game/end', { method: 'POST', body: JSON.stringify({ sessionId }) }),
+    end: (data: { sessionId: string; score: number; phase: number; combo: number; kicksTotal?: number; kicksHit?: number }) =>
+      fetchAPI('/game/end', { method: 'POST', body: JSON.stringify(data) }),
     
     getRankingGlobal: (limit = 100) => fetchAPI(`/game/ranking/global?limit=${limit}`),
     

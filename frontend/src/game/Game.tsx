@@ -48,16 +48,19 @@ export default function Game() {
 
   const endGame = async () => {
     try {
-      if (game.sessionId) {
-        const result = await api.game.end(game.sessionId) as any;
-        setGameResults({
-          finalScore: result.finalScore,
-          phaseReached: result.phaseReached,
-          maxCombo: result.maxCombo,
-          accuracy: result.accuracy,
-          newRecord: result.newRecord,
-        });
-      }
+      const result = await api.game.end({
+        sessionId: game.sessionId || '',
+        score: game.score || 0,
+        phase: game.phase || 1,
+        combo: game.combo || 0,
+      }) as any;
+      setGameResults({
+        finalScore: result.finalScore,
+        phaseReached: result.phaseReached,
+        maxCombo: result.maxCombo,
+        accuracy: result.accuracy,
+        newRecord: result.newRecord,
+      });
       setGameState({ isPlaying: false, isPaused: false });
       audioManager.stopMusic();
       audioManager.playSound('game_over');

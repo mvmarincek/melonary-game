@@ -152,34 +152,37 @@ router.post('/kick', authenticate, gameLimiter, async (req: AuthRequest, res: Re
 
 router.post('/end', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { sessionId } = req.body;
+    const { sessionId, score, phase, combo, kicksTotal, kicksHit } = req.body;
     
-    const gameState = activeSessions.get(sessionId);
-    if (!gameState) {
-      return res.status(400).json({ error: 'Invalid session' });
+    const finalScore = score || 0;
+    const finalPhase = phase || 1;
+    const finalCombo = combo || 0;
+    const totalKicks = kicksTotal || 0;
+    const hitKicks = kicksHit || 0;
+    
+    if (sessionId) {
+      const gameState = activeSessions.get(sessionId);
+      if (gameState) {
+        activeSessions.delete(sessionId);
+      }
+      try {
+        await endSession(sessionId);
+      } catch {}
     }
     
-    const session = await endSession(sessionId);
-    if (!session || session.user_id !== req.user!.id) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
+    await updateUserScore(req.user!.id, finalScore, finalPhase, finalCombo);
+    await updateWeeklyScore(req.user!.id, finalScore);
     
-    await updateUserScore(req.user!.id, gameState.score, gameState.phase, session.combo_max);
-    await updateWeeklyScore(req.user!.id, gameState.score);
-    
-    activeSessions.delete(sessionId);
-    
-    const isNewRecord = gameState.score > (req.user!.total_score - gameState.score);
+    const accuracy = totalKicks > 0 ? Math.round((hitKicks / totalKicks) * 100) : 0;
+    const isNewRecord = finalScore > 0;
     
     res.json({
-      finalScore: gameState.score,
-      phaseReached: gameState.phase,
-      maxCombo: session.combo_max,
-      kicksTotal: gameState.kicksTotal,
-      kicksHit: gameState.kicksHit,
-      kicksPerfect: gameState.kicksPerfect,
-      accuracy: gameState.kicksTotal > 0 ? Math.round((gameState.kicksHit / gameState.kicksTotal) * 100) : 0,
-      duration: session.duration_seconds,
+      finalScore,
+      phaseReached: finalPhase,
+      maxCombo: finalCombo,
+      kicksTotal: totalKicks,
+      kicksHit: hitKicks,
+      accuracy,
       newRecord: isNewRecord
     });
   } catch (error) {
