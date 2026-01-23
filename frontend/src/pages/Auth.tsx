@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
