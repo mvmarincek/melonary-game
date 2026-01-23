@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './hooks/useStore';
+import { api } from './services/api';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Ranking from './pages/Ranking';
@@ -17,9 +19,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function UserDataSync() {
+  const { token, setUser } = useStore();
+  
+  useEffect(() => {
+    if (token) {
+      api.auth.me()
+        .then((data: any) => setUser(data.user || data))
+        .catch(() => {});
+    }
+  }, [token, setUser]);
+  
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <UserDataSync />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />

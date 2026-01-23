@@ -18,7 +18,7 @@ interface GameResults {
 
 export default function Game() {
   const navigate = useNavigate();
-  const { game, setGameState, resetGame, language, setUser } = useStore();
+  const { game, setGameState, resetGame, language, setUser, updateUserScore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
 
@@ -48,11 +48,17 @@ export default function Game() {
 
   const endGame = async () => {
     try {
+      const currentScore = game.score || 0;
+      const currentPhase = game.phase || 1;
+      const currentCombo = game.combo || 0;
+      
+      updateUserScore(currentScore, currentPhase, currentCombo);
+      
       const result = await api.game.end({
         sessionId: game.sessionId || '',
-        score: game.score || 0,
-        phase: game.phase || 1,
-        combo: game.combo || 0,
+        score: currentScore,
+        phase: currentPhase,
+        combo: currentCombo,
       }) as any;
       setGameResults({
         finalScore: result.finalScore,

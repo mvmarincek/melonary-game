@@ -38,6 +38,7 @@ interface AppStore {
   sfxVolume: number;
   game: GameState;
   setUser: (user: User | null) => void;
+  updateUserScore: (score: number, phase: number, combo: number) => void;
   setToken: (token: string | null) => void;
   setLanguage: (lang: Language) => void;
   setSoundEnabled: (enabled: boolean) => void;
@@ -71,6 +72,19 @@ export const useStore = create<AppStore>()(
       sfxVolume: 0.8,
       game: initialGameState,
       setUser: (user) => set({ user }),
+      updateUserScore: (score, phase, combo) =>
+        set((prev) => {
+          if (!prev.user) return prev;
+          return {
+            user: {
+              ...prev.user,
+              total_score: Math.max(prev.user.total_score, score),
+              current_phase: Math.max(prev.user.current_phase, phase),
+              highest_combo: Math.max(prev.user.highest_combo, combo),
+              games_played: prev.user.games_played + 1,
+            },
+          };
+        }),
       setToken: (token) => set({ token }),
       setLanguage: (language) => set({ language }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),

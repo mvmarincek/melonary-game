@@ -6,7 +6,6 @@ let audioCtx: AudioContext | null = null;
 const getAudioContext = () => {
   if (!audioCtx) {
     audioCtx = new AudioContext();
-    console.log('[AUDIO] Created AudioContext, state:', audioCtx.state);
   }
   return audioCtx;
 };
@@ -16,7 +15,6 @@ const MASTER_VOLUME = 0.7;
 const playBark = () => {
   try {
     const ctx = getAudioContext();
-    console.log('[AUDIO] playBark called, ctx.state:', ctx.state);
     if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -29,13 +27,12 @@ const playBark = () => {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.1);
-  } catch (e) { console.error('[AUDIO] playBark error:', e); }
+  } catch {}
 };
 
 const playPunch = () => {
   try {
     const ctx = getAudioContext();
-    console.log('[AUDIO] playPunch called, ctx.state:', ctx.state);
     if (ctx.state === 'suspended') ctx.resume();
     const bufferSize = ctx.sampleRate * 0.12;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -57,7 +54,7 @@ const playPunch = () => {
     filter.connect(gain);
     gain.connect(ctx.destination);
     source.start(ctx.currentTime);
-  } catch (e) { console.error('[AUDIO] playPunch error:', e); }
+  } catch {}
 };
 
 const playScream = () => {
@@ -102,14 +99,12 @@ const playHowl = () => {
 let bgMusicInterval: number | null = null;
 let beatCount = 0;
 const startBgMusic = () => {
-  console.log('[AUDIO] startBgMusic called, bgMusicInterval:', bgMusicInterval);
   if (bgMusicInterval) return;
   beatCount = 0;
   const playActionBeat = () => {
     try {
       const ctx = getAudioContext();
       if (ctx.state === 'suspended') {
-        console.log('[AUDIO] Resuming suspended context');
         ctx.resume();
       }
       const now = ctx.currentTime;
