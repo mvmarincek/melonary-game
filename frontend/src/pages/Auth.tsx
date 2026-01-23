@@ -182,13 +182,23 @@ export default function Auth() {
           </form>
 
           <div className="mt-4 text-center">
-            <button
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-              className="text-yellow-500 text-sm"
-            >
+            <p className="text-gray-500 text-xs mb-2">
               {mode === 'login'
                 ? t('auth.no_account', language)
                 : t('auth.have_account', language)}
+            </p>
+            <button
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              className="w-full py-3 rounded-xl font-bold transition-all active:scale-95 border-2"
+              style={{ 
+                borderColor: '#FFD700',
+                color: '#FFD700',
+                background: 'rgba(255, 215, 0, 0.1)'
+              }}
+            >
+              {mode === 'login'
+                ? t('auth.register', language)
+                : t('auth.login', language)}
             </button>
           </div>
 
