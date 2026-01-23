@@ -473,15 +473,14 @@ export default function GameCanvas() {
         const jumpProgress = jumpFrame / 10;
         drawY = playerY - Math.sin(jumpProgress * Math.PI) * Math.round(45 * SCALE);
         if (jumpFrame > 2 && jumpFrame < 8) {
-          rotation = Math.PI / 2;
+          rotation = playerLane === 0 ? Math.PI / 2 : -Math.PI / 2;
         } else {
-          rotation = Math.sin(jumpProgress * Math.PI) * 0.3;
+          rotation = Math.sin(jumpProgress * Math.PI) * 0.3 * (playerLane === 0 ? 1 : -1);
         }
       }
       ctx.save();
       ctx.translate(playerX, drawY);
       ctx.rotate(rotation);
-      if (playerLane === 1) ctx.scale(-1, 1);
       if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
       ctx.restore();
 
