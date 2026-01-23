@@ -550,43 +550,44 @@ export default function GameCanvas() {
           height={CANVAS_HEIGHT} 
           className="border-2 border-yellow-500/50 rounded-lg w-full"
           style={{ 
+            maxHeight: 'calc(100vh - 280px)',
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
         />
-        <div className="flex gap-2 mt-3 sm:hidden">
-          <div className="flex flex-col gap-2 flex-1">
+        <div className="flex gap-2 mt-2 sm:hidden">
+          <div className="flex flex-col gap-1 flex-1">
             <button 
               onTouchStart={() => moveVertical('up')} 
-              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
             >
               ↑
             </button>
             <button 
               onTouchStart={() => moveVertical('down')} 
-              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-xl text-yellow-500 active:bg-yellow-500/30"
             >
               ↓
             </button>
           </div>
-          <div className="flex-[2] flex flex-col gap-2">
+          <div className="flex-[2] flex flex-col gap-1">
             <button 
               onTouchStart={switchLane} 
-              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-base text-yellow-500 font-bold active:bg-yellow-500/30"
+              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-sm text-yellow-500 font-bold active:bg-yellow-500/30"
             >
               TROCAR FAIXA
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
+              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-base font-bold text-black active:scale-95"
             >
               VOADORA!
             </button>
           </div>
           <button 
             onClick={() => setGameState({ isPaused: true })}
-            className="h-[116px] w-12 bg-red-600/80 border-2 border-red-400/60 rounded-xl text-white font-bold active:bg-red-500 flex items-center justify-center"
+            className="h-[90px] w-10 bg-red-600/80 border-2 border-red-400/60 rounded-xl text-white font-bold active:bg-red-500 flex items-center justify-center"
           >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
             </svg>
           </button>
