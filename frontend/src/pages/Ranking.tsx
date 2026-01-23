@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t } from '../i18n/translations';
-import { ContractBanner, SolanaLogo, MelonaryLogo } from '../components/TokenFooter';
+import { ContractBanner, MelonaryLogo } from '../components/TokenFooter';
 
 interface RankingEntry {
   position: number;

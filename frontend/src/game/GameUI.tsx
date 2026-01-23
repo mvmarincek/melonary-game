@@ -6,8 +6,6 @@ interface GameUIProps {
 }
 
 export default function GameUI({ onPause }: GameUIProps) {
-  const { game } = useStore();
-
   return (
     <div className="absolute inset-0 pointer-events-none z-20">
       <button

@@ -4,7 +4,7 @@ import { useStore } from '../hooks/useStore';
 import { api } from '../services/api';
 import { t, Language } from '../i18n/translations';
 import { audioManager } from '../services/audio';
-import { ContractBanner, SolanaLogo, MelonaryLogo } from '../components/TokenFooter';
+import { ContractBanner, MelonaryLogo } from '../components/TokenFooter';
 
 export default function Settings() {
   const { language, setLanguage, soundEnabled, setSoundEnabled, musicVolume, setMusicVolume, sfxVolume, setSfxVolume, user } = useStore();
