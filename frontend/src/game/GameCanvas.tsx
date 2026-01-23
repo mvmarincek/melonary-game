@@ -346,30 +346,6 @@ export default function GameCanvas() {
   }, [game.isPlaying, game.isPaused, switchLane, moveVertical, handleKick, setGameState]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    let startX = 0, startY = 0;
-    const onStart = (e: TouchEvent) => { 
-      startX = e.touches[0].clientX; 
-      startY = e.touches[0].clientY; 
-    };
-    const onEnd = (e: TouchEvent) => {
-      const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dx) < 25 && Math.abs(dy) < 25) handleKick();
-      else if (Math.abs(dx) > Math.abs(dy)) switchLane();
-      else moveVertical(dy > 0 ? 'down' : 'up');
-    };
-    canvas.addEventListener('touchstart', onStart, { passive: true });
-    canvas.addEventListener('touchend', onEnd, { passive: true });
-    return () => { 
-      canvas.removeEventListener('touchstart', onStart); 
-      canvas.removeEventListener('touchend', onEnd); 
-    };
-  }, [switchLane, moveVertical, handleKick]);
-
-  useEffect(() => {
     if (isJumping) {
       const interval = setInterval(() => setJumpFrame(f => f + 1), 35);
       return () => clearInterval(interval);
@@ -552,16 +528,16 @@ export default function GameCanvas() {
 
   return (
     <div 
-      className="flex flex-col items-center min-h-screen pt-8 p-2 sm:p-4 sm:pt-4 overflow-y-auto" 
+      className="flex flex-col items-center p-2 sm:p-4 pb-8" 
       style={{ 
         backgroundImage: 'url(/assets/mural-bg.jpg)', 
         backgroundSize: 'cover', 
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        minHeight: '100vh'
       }}
     >
       <div 
-        className="p-2 sm:p-4 rounded-2xl w-full max-w-[650px]" 
+        className="p-2 sm:p-4 rounded-2xl w-full max-w-[500px]" 
         style={{ 
           background: 'rgba(0,0,0,0.95)', 
           boxShadow: '0 0 50px rgba(255, 215, 0, 0.15)' 
@@ -573,8 +549,6 @@ export default function GameCanvas() {
           height={CANVAS_HEIGHT} 
           className="border-2 border-yellow-500/50 rounded-lg w-full"
           style={{ 
-            maxHeight: 'calc(100vh - 320px)',
-            aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
         />
