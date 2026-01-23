@@ -9,15 +9,15 @@
   "theme_color": "#FFD700",
   "icons": [
     {
-      "src": "/melonary-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/melonary-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/melonary-icon.svg",
+      "src": "/melonary-icon.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
