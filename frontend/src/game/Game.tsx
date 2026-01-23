@@ -47,22 +47,25 @@ export default function Game() {
   };
 
   const endGame = async () => {
-    if (!game.sessionId) return;
-
     try {
-      const result = await api.game.end(game.sessionId) as any;
-      setGameState({ isPlaying: false });
+      if (game.sessionId) {
+        const result = await api.game.end(game.sessionId) as any;
+        setGameResults({
+          finalScore: result.finalScore,
+          phaseReached: result.phaseReached,
+          maxCombo: result.maxCombo,
+          accuracy: result.accuracy,
+          newRecord: result.newRecord,
+        });
+      }
+      setGameState({ isPlaying: false, isPaused: false });
       audioManager.stopMusic();
       audioManager.playSound('game_over');
-      setGameResults({
-        finalScore: result.finalScore,
-        phaseReached: result.phaseReached,
-        maxCombo: result.maxCombo,
-        accuracy: result.accuracy,
-        newRecord: result.newRecord,
-      });
     } catch (error) {
       console.error('Failed to end game:', error);
+      setGameState({ isPlaying: false, isPaused: false });
+      audioManager.stopMusic();
+      navigate('/');
     }
   };
 

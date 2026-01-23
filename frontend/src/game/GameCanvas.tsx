@@ -675,8 +675,17 @@ export default function GameCanvas() {
             </svg>
           </button>
         </div>
-        <p className="mt-3 text-yellow-500/80 text-lg text-center hidden sm:block font-bold tracking-wide" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}>
-          ARROWS = MOVE | SPACE = KICK
+        <p className="mt-3 text-yellow-500/80 text-lg text-center hidden sm:flex items-center justify-center gap-4 font-bold tracking-wide" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}>
+          <span>ARROWS = MOVE | SPACE = KICK | ESC = PAUSE</span>
+          <button 
+            onClick={() => setGameState({ isPaused: true })}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-white text-sm flex items-center gap-2 transition-all"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+            PAUSE
+          </button>
         </p>
         
         <GameFooter />
