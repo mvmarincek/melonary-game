@@ -1,9 +1,12 @@
 import { Router, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { v4 as uuid } from 'uuid';
 import { createUser, findUserByEmail, findUserByUsername, validatePassword, updateLastLogin, updateUserSettings } from '../models/user';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
+import { query, execute } from '../config/database';
 
 const router = Router();
 
@@ -158,6 +161,30 @@ router.put('/settings', authenticate, async (req: AuthRequest, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid settings' });
     }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/setup-admin', async (req, res) => {
+  try {
+    const adminEmail = 'admin@melonary.game';
+    const adminPassword = 'admin123';
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    
+    const existing = await query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+    
+    if (existing.length > 0) {
+      await execute('UPDATE users SET password_hash = $1, is_admin = true WHERE email = $2', [passwordHash, adminEmail]);
+      res.json({ success: true, message: 'Admin password reset', email: adminEmail, password: adminPassword });
+    } else {
+      await execute(`
+        INSERT INTO users (id, name, email, username, password_hash, is_admin, language)
+        VALUES ($1, 'Admin', $2, 'admin', $3, true, 'en')
+      `, [uuid(), adminEmail, passwordHash]);
+      res.json({ success: true, message: 'Admin created', email: adminEmail, password: adminPassword });
+    }
+  } catch (error) {
+    console.error('Setup admin error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
