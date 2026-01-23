@@ -4,10 +4,7 @@ import { GameFooter } from '../components/TokenFooter';
 
 let audioCtx: AudioContext | null = null;
 const getAudioContext = () => {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
-    console.log('[AUDIO] Created AudioContext, state:', audioCtx.state);
-  }
+  if (!audioCtx) audioCtx = new AudioContext();
   return audioCtx;
 };
 
@@ -16,7 +13,6 @@ const MASTER_VOLUME = 0.7;
 const playBark = () => {
   try {
     const ctx = getAudioContext();
-    console.log('[AUDIO] playBark called, ctx.state:', ctx.state);
     if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -29,13 +25,12 @@ const playBark = () => {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.1);
-  } catch (e) { console.error('[AUDIO] playBark error:', e); }
+  } catch {}
 };
 
 const playPunch = () => {
   try {
     const ctx = getAudioContext();
-    console.log('[AUDIO] playPunch called, ctx.state:', ctx.state);
     if (ctx.state === 'suspended') ctx.resume();
     const bufferSize = ctx.sampleRate * 0.12;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -57,7 +52,7 @@ const playPunch = () => {
     filter.connect(gain);
     gain.connect(ctx.destination);
     source.start(ctx.currentTime);
-  } catch (e) { console.error('[AUDIO] playPunch error:', e); }
+  } catch {}
 };
 
 const playScream = () => {
@@ -102,16 +97,12 @@ const playHowl = () => {
 let bgMusicInterval: number | null = null;
 let beatCount = 0;
 const startBgMusic = () => {
-  console.log('[AUDIO] startBgMusic called, bgMusicInterval:', bgMusicInterval);
   if (bgMusicInterval) return;
   beatCount = 0;
   const playActionBeat = () => {
     try {
       const ctx = getAudioContext();
-      if (ctx.state === 'suspended') {
-        console.log('[AUDIO] Resuming suspended context');
-        ctx.resume();
-      }
+      if (ctx.state === 'suspended') ctx.resume();
       const now = ctx.currentTime;
       const kick = ctx.createOscillator();
       const kickGain = ctx.createGain();
@@ -191,10 +182,9 @@ const CANVAS_HEIGHT = Math.round(BASE_HEIGHT * SCALE);
 const LANE_LEFT_X = Math.round(145 * SCALE);
 const LANE_RIGHT_X = Math.round(255 * SCALE);
 const SPRITE_SIZE = Math.round(130 * SCALE);
-const PHASE_DURATION_MS = 3 * 60 * 1000;
+const PHASE_DURATION_MS = 2 * 60 * 1000;
 const PHASE_TARGET_SCORE = 500;
 const PHASE_BONUS = 300;
-const MAX_PHASES = 96;
 
 const CITIES = [
   'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
@@ -227,7 +217,7 @@ const CITY_BACKGROUNDS = [
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { game, setGameState, saveProgress } = useStore();
+  const { game, setGameState } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [texts, setTexts] = useState<FloatingText[]>([]);
   const [playerLane, setPlayerLane] = useState<0 | 1>(0);
@@ -275,8 +265,7 @@ export default function GameCanvas() {
     setPhaseTimeLeft(PHASE_DURATION_MS);
     setPhaseScore(0);
     setPhaseBonusAwarded(false);
-    saveProgress();
-  }, [game.phase, saveProgress]);
+  }, [game.phase]);
 
   useEffect(() => {
     if (game.isPlaying && !game.isPaused) {
@@ -293,10 +282,7 @@ export default function GameCanvas() {
       const elapsed = Date.now() - phaseStartTime;
       const remaining = Math.max(0, PHASE_DURATION_MS - elapsed);
       setPhaseTimeLeft(remaining);
-      if (remaining <= 0) {
-        const nextPhase = game.phase >= MAX_PHASES ? 1 : game.phase + 1;
-        setGameState({ phase: nextPhase });
-      }
+      if (remaining <= 0) setGameState({ phase: game.phase + 1 });
     }, 1000);
     return () => clearInterval(interval);
   }, [game.isPlaying, game.isPaused, game.phase, phaseStartTime, setGameState]);
@@ -370,8 +356,7 @@ export default function GameCanvas() {
           newScore += PHASE_BONUS;
           setTexts(t => [...t, { id: textIdRef.current++, x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, text: `BONUS +${PHASE_BONUS}!`, frame: 0 }]);
           setTimeout(() => playHowl(), 100);
-          const nextPhase = game.phase >= MAX_PHASES ? 1 : game.phase + 1;
-          setGameState({ score: newScore, combo: newCombo, phase: nextPhase });
+          setGameState({ score: newScore, combo: newCombo, phase: game.phase + 1 });
         } else {
           setGameState({ score: newScore, combo: newCombo });
         }
@@ -574,11 +559,9 @@ export default function GameCanvas() {
       ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
-      const comboText = game.combo > 0 ? `${game.combo}x` : '0x';
-      const comboColor = game.combo >= 20 ? '#FF4444' : game.combo >= 10 ? '#FF8844' : game.combo >= 3 ? '#FFD700' : '#888';
-      ctx.strokeText(comboText, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
-      ctx.fillStyle = comboColor;
-      ctx.fillText(comboText, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
+      ctx.strokeText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
       
       if (comboDisplay.visible && comboDisplay.value >= 3) {
         const comboAlpha = Math.min(1, (30 - comboDisplay.frame) / 10);
@@ -659,21 +642,21 @@ export default function GameCanvas() {
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
+              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-1"
             >
-              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
-                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
-                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
-                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
-                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
-                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
+              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <ellipse cx="7" cy="5" rx="2" ry="2.5"/>
+                <ellipse cx="3" cy="10" rx="1.5" ry="2"/>
+                <ellipse cx="7" cy="12" rx="1.5" ry="2"/>
+                <ellipse cx="11" cy="10" rx="1.5" ry="2"/>
+                <ellipse cx="7" cy="17" rx="4" ry="5"/>
               </svg>
-              <svg className="w-9 h-9" viewBox="0 0 100 100" fill="black">
-                <path d="M50 95 C20 95 15 70 15 60 C15 45 30 40 50 40 C70 40 85 45 85 60 C85 70 80 95 50 95Z"/>
-                <ellipse cx="20" cy="32" rx="11" ry="14" transform="rotate(-15 20 32)"/>
-                <ellipse cx="40" cy="18" rx="9" ry="13" transform="rotate(-5 40 18)"/>
-                <ellipse cx="60" cy="18" rx="9" ry="13" transform="rotate(5 60 18)"/>
-                <ellipse cx="80" cy="32" rx="11" ry="14" transform="rotate(15 80 32)"/>
+              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <ellipse cx="17" cy="5" rx="2" ry="2.5"/>
+                <ellipse cx="13" cy="10" rx="1.5" ry="2"/>
+                <ellipse cx="17" cy="12" rx="1.5" ry="2"/>
+                <ellipse cx="21" cy="10" rx="1.5" ry="2"/>
+                <ellipse cx="17" cy="17" rx="4" ry="5"/>
               </svg>
             </button>
           </div>
@@ -686,17 +669,8 @@ export default function GameCanvas() {
             </svg>
           </button>
         </div>
-        <p className="mt-3 text-yellow-500/80 text-lg text-center hidden sm:flex items-center justify-center gap-4 font-bold tracking-wide" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}>
-          <span>ARROWS = MOVE | SPACE = KICK | ESC = PAUSE</span>
-          <button 
-            onClick={() => setGameState({ isPaused: true })}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-white text-sm flex items-center gap-2 transition-all"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-            </svg>
-            PAUSE
-          </button>
+        <p className="mt-3 text-yellow-500/80 text-lg text-center hidden sm:block font-bold tracking-wide" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}>
+          ARROWS = MOVE | SPACE = KICK
         </p>
         
         <GameFooter />
