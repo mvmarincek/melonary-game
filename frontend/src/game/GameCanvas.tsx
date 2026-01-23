@@ -533,7 +533,7 @@ export default function GameCanvas() {
 
   return (
     <div 
-      className="flex flex-col items-center p-2 sm:p-4 pb-8 overflow-y-auto" 
+      className="flex flex-col items-center p-2 sm:p-4 pt-16 pb-8 overflow-y-auto" 
       style={{ 
         backgroundImage: 'url(/assets/mural-bg.jpg)', 
         backgroundSize: 'cover', 
