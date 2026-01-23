@@ -172,18 +172,25 @@ router.get('/setup-admin', async (req, res) => {
     
     const { pool } = await import('../config/database');
     
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+    const existingEmail = await pool.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
     
-    if (existing.rows.length > 0) {
+    if (existingEmail.rows.length > 0) {
       await pool.query('UPDATE users SET password_hash = $1, is_admin = true WHERE email = $2', [passwordHash, adminEmail]);
       res.json({ success: true, message: 'Admin password reset', email: adminEmail, password: adminPassword });
     } else {
-      const id = uuid();
-      await pool.query(`
-        INSERT INTO users (id, name, email, username, password_hash, is_admin, language)
-        VALUES ($1, 'Admin', $2, 'admin', $3, true, 'en')
-      `, [id, adminEmail, passwordHash]);
-      res.json({ success: true, message: 'Admin created', email: adminEmail, password: adminPassword });
+      const existingUsername = await pool.query('SELECT id, email FROM users WHERE username = $1', ['admin']);
+      
+      if (existingUsername.rows.length > 0) {
+        await pool.query('UPDATE users SET password_hash = $1, is_admin = true, email = $2 WHERE username = $3', [passwordHash, adminEmail, 'admin']);
+        res.json({ success: true, message: 'Admin updated', email: adminEmail, password: adminPassword });
+      } else {
+        const id = uuid();
+        await pool.query(`
+          INSERT INTO users (id, name, email, username, password_hash, is_admin, language)
+          VALUES ($1, 'Admin', $2, 'admin', $3, true, 'en')
+        `, [id, adminEmail, passwordHash]);
+        res.json({ success: true, message: 'Admin created', email: adminEmail, password: adminPassword });
+      }
     }
   } catch (error) {
     console.error('Setup admin error:', error);
