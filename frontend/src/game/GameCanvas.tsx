@@ -439,22 +439,17 @@ export default function GameCanvas() {
       if (isJumping) {
         const jumpProgress = jumpFrame / 10;
         drawY = playerY - Math.sin(jumpProgress * Math.PI) * Math.round(45 * SCALE);
-        rotation = Math.sin(jumpProgress * Math.PI) * 0.4;
+        if (jumpFrame > 2 && jumpFrame < 8) {
+          rotation = Math.PI / 2;
+        } else {
+          rotation = Math.sin(jumpProgress * Math.PI) * 0.3;
+        }
       }
       ctx.save();
       ctx.translate(playerX, drawY);
       ctx.rotate(rotation);
       if (playerLane === 1) ctx.scale(-1, 1);
       if (dogImg.current?.complete) ctx.drawImage(dogImg.current, -SPRITE_SIZE / 2, -SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
-      if (isJumping && jumpFrame > 2 && jumpFrame < 8) {
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.moveTo(Math.round(20 * SCALE), -Math.round(5 * SCALE));
-        ctx.lineTo(Math.round(38 * SCALE), 0);
-        ctx.lineTo(Math.round(20 * SCALE), Math.round(5 * SCALE));
-        ctx.closePath();
-        ctx.fill();
-      }
       ctx.restore();
 
       texts.forEach(t => {
