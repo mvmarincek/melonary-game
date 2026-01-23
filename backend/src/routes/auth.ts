@@ -198,4 +198,20 @@ router.get('/setup-admin', async (req, res) => {
   }
 });
 
+router.get('/reset-all-scores', async (req, res) => {
+  try {
+    const { pool } = await import('../config/database');
+    
+    await pool.query('UPDATE users SET total_score = 0, current_phase = 1, highest_combo = 0, games_played = 0');
+    await pool.query('DELETE FROM weekly_scores');
+    await pool.query('DELETE FROM game_sessions');
+    await pool.query('DELETE FROM game_actions');
+    
+    res.json({ success: true, message: 'All scores reset to zero' });
+  } catch (error) {
+    console.error('Reset scores error:', error);
+    res.status(500).json({ error: 'Server error', details: String(error) });
+  }
+});
+
 export default router;
