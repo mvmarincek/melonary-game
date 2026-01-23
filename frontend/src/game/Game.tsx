@@ -86,28 +86,31 @@ export default function Game() {
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-gradient-to-br from-yellow-500/15 to-orange-500/10 rounded-full blur-3xl animate-pulse-glow" />
         </div>
 
-        <header className="absolute top-4 right-4 z-20">
-          <MelonaryLogo size={44} />
+        <header className="absolute top-4 left-4 z-20">
+          <button onClick={() => navigate('/')} className="text-yellow-500 text-sm flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </button>
         </header>
 
         <main className="relative z-10 w-full max-w-sm text-center animate-slide-up">
           <div className="card p-6">
-            <h1 className="font-game text-2xl text-glow-gold mb-6" style={{ color: '#FFD700' }}>
-              {t('game.title', language)}
-            </h1>
+            <div className="flex justify-center mb-4">
+              <MelonaryLogo size={180} />
+            </div>
 
             <div className="mb-6">
-              <div className="avatar-ring w-28 h-28 mx-auto mb-4">
-                <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                  <img 
-                    src="/assets/dog-final.png" 
-                    alt="Melonary"
-                    className="w-full h-full object-contain animate-float"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
+              <div className="w-48 h-48 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900" style={{ border: '3px solid #FFD700', boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)' }}>
+                <img 
+                  src="/assets/dog-final.png" 
+                  alt="Melonary"
+                  className="w-full h-full object-contain animate-float"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               </div>
               <p className="text-gray-500 text-sm">
                 {t('game.tap_to_kick', language)}
