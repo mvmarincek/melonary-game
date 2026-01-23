@@ -600,15 +600,19 @@ export default function GameCanvas() {
           <div className="flex-[2] flex flex-col gap-1">
             <button 
               onTouchStart={switchLane} 
-              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-sm text-yellow-500 font-bold active:bg-yellow-500/30"
+              className="h-11 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-yellow-500 font-bold active:bg-yellow-500/30 flex items-center justify-center gap-2"
             >
-              TROCAR FAIXA
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+              </svg>
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-base font-bold text-black active:scale-95"
+              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
             >
-              VOADORA!
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 5.28c-1.23-.37-2.22-1.17-2.8-2.18l-1-1.6c-.41-.65-1.11-1-1.84-1-.78 0-1.59.5-1.78 1.44S7 23 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3c1 1.15 2.41 2.01 4 2.34V23H19V9.28c-.63.52-1.44.72-1.5.5z"/>
+              </svg>
             </button>
           </div>
           <button 
@@ -621,7 +625,7 @@ export default function GameCanvas() {
           </button>
         </div>
         <p className="mt-2 text-white/50 text-xs text-center hidden sm:block">
-          Setas = mover | ESPACO = voadora
+          Arrows = move | SPACE = kick
         </p>
         
         <GameFooter />
