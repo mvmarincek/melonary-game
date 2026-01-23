@@ -610,9 +610,12 @@ export default function GameCanvas() {
               onTouchStart={() => handleKick()} 
               className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-2"
             >
-              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="18" cy="4" r="2.5"/>
-                <path d="M15 7l-2.5 2.5L9 7 4 12l1.5 1.5L9 10l2 2-4 5 1.5 1.5L14 12l2 2v4h2v-5l-2-2 2-3.5L15 7z"/>
+              <svg className="w-10 h-10" viewBox="0 0 48 48" fill="currentColor">
+                <circle cx="38" cy="14" r="4"/>
+                <path d="M8 28l8-4 6 2 8-8 4-2 2 3-6 5-4 4-6-1-4 3-2 4z"/>
+                <path d="M22 22l-10 6 2 3 10-5z"/>
+                <path d="M30 18l12 2v3l-14-2z"/>
+                <ellipse cx="14" cy="33" rx="3" ry="2" transform="rotate(-20 14 33)"/>
               </svg>
             </button>
           </div>
