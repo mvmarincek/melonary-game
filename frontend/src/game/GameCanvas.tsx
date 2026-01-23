@@ -648,20 +648,21 @@ export default function GameCanvas() {
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center"
+              className="h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl font-bold text-black active:scale-95 flex items-center justify-center gap-3"
             >
-              <svg className="w-16 h-9" viewBox="0 0 64 32" fill="currentColor">
-                <ellipse cx="12" cy="6" rx="3" ry="3.5"/>
-                <ellipse cx="6" cy="13" rx="2.5" ry="3"/>
-                <ellipse cx="12" cy="16" rx="2.5" ry="3"/>
-                <ellipse cx="18" cy="13" rx="2.5" ry="3"/>
-                <ellipse cx="12" cy="24" rx="5" ry="6"/>
-                
-                <ellipse cx="52" cy="6" rx="3" ry="3.5"/>
-                <ellipse cx="46" cy="13" rx="2.5" ry="3"/>
-                <ellipse cx="52" cy="16" rx="2.5" ry="3"/>
-                <ellipse cx="58" cy="13" rx="2.5" ry="3"/>
-                <ellipse cx="52" cy="24" rx="5" ry="6"/>
+              <svg className="w-8 h-8" viewBox="0 0 100 100" fill="black">
+                <ellipse cx="50" cy="75" rx="25" ry="20"/>
+                <ellipse cx="22" cy="40" rx="12" ry="15"/>
+                <ellipse cx="42" cy="28" rx="10" ry="14"/>
+                <ellipse cx="58" cy="28" rx="10" ry="14"/>
+                <ellipse cx="78" cy="40" rx="12" ry="15"/>
+              </svg>
+              <svg className="w-8 h-8" viewBox="0 0 100 100" fill="black">
+                <ellipse cx="50" cy="75" rx="25" ry="20"/>
+                <ellipse cx="22" cy="40" rx="12" ry="15"/>
+                <ellipse cx="42" cy="28" rx="10" ry="14"/>
+                <ellipse cx="58" cy="28" rx="10" ry="14"/>
+                <ellipse cx="78" cy="40" rx="12" ry="15"/>
               </svg>
             </button>
           </div>
