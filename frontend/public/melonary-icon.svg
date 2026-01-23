@@ -9,17 +9,48 @@
       <stop offset="0%" stop-color="#DAA520"/>
       <stop offset="100%" stop-color="#B8860B"/>
     </linearGradient>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="50%" stop-color="#16213e"/>
+      <stop offset="100%" stop-color="#0f0f23"/>
+    </linearGradient>
   </defs>
+  <!-- Coin border -->
   <circle cx="256" cy="256" r="250" fill="url(#borderGrad)"/>
+  <!-- Coin face -->
   <circle cx="256" cy="256" r="230" fill="url(#coinGrad)"/>
-  <circle cx="256" cy="256" r="210" fill="#D2691E" opacity="0.3"/>
-  <ellipse cx="180" cy="200" rx="35" ry="45" fill="#1a1a2e"/>
-  <ellipse cx="332" cy="200" rx="35" ry="45" fill="#1a1a2e"/>
-  <ellipse cx="185" cy="190" rx="12" ry="15" fill="#fff"/>
-  <ellipse cx="337" cy="190" rx="12" ry="15" fill="#fff"/>
-  <ellipse cx="256" cy="300" rx="50" ry="35" fill="#1a1a2e"/>
-  <ellipse cx="256" cy="290" rx="25" ry="15" fill="#CD7F32"/>
-  <path d="M150 340 Q256 400 362 340" stroke="#1a1a2e" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <ellipse cx="140" cy="160" rx="40" ry="60" fill="#D2691E" transform="rotate(-30 140 160)"/>
-  <ellipse cx="372" cy="160" rx="40" ry="60" fill="#D2691E" transform="rotate(30 372 160)"/>
+  <!-- Fur texture -->
+  <circle cx="256" cy="256" r="210" fill="#D2691E" opacity="0.2"/>
+  
+  <!-- Ears -->
+  <ellipse cx="120" cy="140" rx="50" ry="70" fill="#CD853F" transform="rotate(-20 120 140)"/>
+  <ellipse cx="392" cy="140" rx="50" ry="70" fill="#CD853F" transform="rotate(20 392 140)"/>
+  <ellipse cx="125" cy="145" rx="30" ry="45" fill="#DEB887" transform="rotate(-20 125 145)"/>
+  <ellipse cx="387" cy="145" rx="30" ry="45" fill="#DEB887" transform="rotate(20 387 145)"/>
+  
+  <!-- Face/Head shape -->
+  <ellipse cx="256" cy="280" rx="140" ry="120" fill="#CD853F"/>
+  <ellipse cx="256" cy="270" rx="120" ry="100" fill="#DEB887"/>
+  
+  <!-- Sunglasses frame -->
+  <rect x="100" y="200" width="312" height="80" rx="40" fill="#1a1a2e"/>
+  <!-- Left lens -->
+  <ellipse cx="175" cy="240" rx="60" ry="45" fill="url(#glassGrad)"/>
+  <ellipse cx="165" cy="230" rx="15" ry="10" fill="#ffffff" opacity="0.3"/>
+  <!-- Right lens -->
+  <ellipse cx="337" cy="240" rx="60" ry="45" fill="url(#glassGrad)"/>
+  <ellipse cx="327" cy="230" rx="15" ry="10" fill="#ffffff" opacity="0.3"/>
+  <!-- Bridge -->
+  <rect x="230" y="225" width="52" height="30" rx="10" fill="#1a1a2e"/>
+  
+  <!-- Nose -->
+  <ellipse cx="256" cy="320" rx="35" ry="25" fill="#1a1a2e"/>
+  <ellipse cx="256" cy="315" rx="15" ry="10" fill="#4a4a5a"/>
+  
+  <!-- Mouth/Smile -->
+  <path d="M190 360 Q256 410 322 360" stroke="#1a1a2e" stroke-width="10" fill="none" stroke-linecap="round"/>
+  
+  <!-- Tongue -->
+  <ellipse cx="256" cy="385" rx="25" ry="20" fill="#FF6B6B"/>
+  <path d="M256 375 L256 400" stroke="#E55555" stroke-width="4"/>
 </svg>
