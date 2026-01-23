@@ -183,6 +183,8 @@ const LANE_LEFT_X = Math.round(145 * SCALE);
 const LANE_RIGHT_X = Math.round(255 * SCALE);
 const SPRITE_SIZE = Math.round(130 * SCALE);
 const PHASE_DURATION_MS = 2 * 60 * 1000;
+const PHASE_TARGET_SCORE = 500;
+const PHASE_BONUS = 300;
 
 const CITIES = [
   'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
@@ -225,6 +227,8 @@ export default function GameCanvas() {
   const [kickCooldown, setKickCooldown] = useState(false);
   const [phaseStartTime, setPhaseStartTime] = useState(Date.now());
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(PHASE_DURATION_MS);
+  const [phaseScore, setPhaseScore] = useState(0);
+  const [phaseBonusAwarded, setPhaseBonusAwarded] = useState(false);
   const [comboDisplay, setComboDisplay] = useState({ value: 0, visible: false, frame: 0 });
   
   const lastSpawnRef = useRef(0);
@@ -259,6 +263,8 @@ export default function GameCanvas() {
   useEffect(() => {
     setPhaseStartTime(Date.now());
     setPhaseTimeLeft(PHASE_DURATION_MS);
+    setPhaseScore(0);
+    setPhaseBonusAwarded(false);
   }, [game.phase]);
 
   useEffect(() => {
@@ -313,6 +319,7 @@ export default function GameCanvas() {
       let newScore = game.score;
       let newCombo = game.combo;
       let hitAny = false;
+      let pointsEarned = 0;
 
       const updated = prev.map(m => {
         if (m.hit || m.lane !== playerLane) return m;
@@ -323,6 +330,7 @@ export default function GameCanvas() {
           const basePoints = 10;
           const comboBonus = Math.min(newCombo, 10);
           const points = basePoints + (comboBonus * 2);
+          pointsEarned += points;
           newScore += points;
           hitCountRef.current++;
           lastHitTimeRef.current = Date.now();
@@ -340,7 +348,19 @@ export default function GameCanvas() {
       });
 
       if (hitAny) {
-        setGameState({ score: newScore, combo: newCombo });
+        const newPhaseScore = phaseScore + pointsEarned;
+        setPhaseScore(newPhaseScore);
+        
+        if (newPhaseScore >= PHASE_TARGET_SCORE && !phaseBonusAwarded) {
+          setPhaseBonusAwarded(true);
+          newScore += PHASE_BONUS;
+          setTexts(t => [...t, { id: textIdRef.current++, x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, text: `BONUS +${PHASE_BONUS}!`, frame: 0 }]);
+          setTimeout(() => playHowl(), 100);
+          setGameState({ score: newScore, combo: newCombo, phase: game.phase + 1 });
+        } else {
+          setGameState({ score: newScore, combo: newCombo });
+        }
+        
         if (newCombo >= 3) {
           setComboDisplay({ value: newCombo, visible: true, frame: 0 });
         }
@@ -349,7 +369,7 @@ export default function GameCanvas() {
     });
 
     setTimeout(() => { setIsJumping(false); setKickCooldown(false); }, 350);
-  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, playerLane, playerY, isJumping, setGameState]);
+  }, [kickCooldown, game.isPlaying, game.isPaused, game.score, game.combo, game.phase, playerLane, playerY, isJumping, phaseScore, phaseBonusAwarded, setGameState]);
 
   const switchLane = useCallback(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -501,6 +521,20 @@ export default function GameCanvas() {
       ctx.fillStyle = 'rgba(0,0,0,0.92)';
       ctx.fillRect(0, 0, CANVAS_WIDTH, hudHeight);
       
+      const progressBarWidth = Math.round(80 * SCALE);
+      const progressBarHeight = Math.round(8 * SCALE);
+      const progressBarX = Math.round(12 * SCALE);
+      const progressBarY = Math.round(42 * SCALE);
+      const progress = Math.min(phaseScore / PHASE_TARGET_SCORE, 1);
+      
+      ctx.fillStyle = '#333';
+      ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+      ctx.fillStyle = phaseBonusAwarded ? '#22c55e' : '#FFD700';
+      ctx.fillRect(progressBarX, progressBarY, progressBarWidth * progress, progressBarHeight);
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+      
       ctx.textAlign = 'left';
       ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
@@ -555,7 +589,7 @@ export default function GameCanvas() {
     };
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft, comboDisplay]);
+  }, [motorcycles, texts, playerLane, playerY, isJumping, jumpFrame, currentBgIndex, currentCity, game.score, game.combo, game.phase, phaseTimeLeft, phaseScore, phaseBonusAwarded, comboDisplay]);
 
   return (
     <div 
