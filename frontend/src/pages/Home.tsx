@@ -18,8 +18,8 @@ export default function Home() {
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-sm py-4">
-        <div className="relative mb-4">
-          <MelonaryLogo size={140} />
+        <div className="relative mb-4 w-full flex justify-center">
+          <MelonaryLogo size={280} />
         </div>
         
         <p className="text-xl font-bold text-orange-400 mb-1">Flying Kick!</p>
