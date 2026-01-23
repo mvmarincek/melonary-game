@@ -624,8 +624,8 @@ export default function GameCanvas() {
             </svg>
           </button>
         </div>
-        <p className="mt-2 text-white/50 text-xs text-center hidden sm:block">
-          Arrows = move | SPACE = kick
+        <p className="mt-3 text-yellow-500/80 text-lg text-center hidden sm:block font-bold tracking-wide" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}>
+          ARROWS = MOVE | SPACE = KICK
         </p>
         
         <GameFooter />
