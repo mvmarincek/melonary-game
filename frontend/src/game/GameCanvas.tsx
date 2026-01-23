@@ -4,12 +4,7 @@ import { GameFooter } from '../components/TokenFooter';
 
 let audioCtx: AudioContext | null = null;
 const getAudioContext = () => {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  if (!audioCtx) audioCtx = new AudioContext();
   return audioCtx;
 };
 
@@ -264,18 +259,6 @@ export default function GameCanvas() {
       img.src = bg;
       bgImgs.current[i] = img;
     });
-    
-    const unlockAudio = () => {
-      getAudioContext();
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('click', unlockAudio);
-    };
-    document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener('click', unlockAudio);
-    return () => {
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('click', unlockAudio);
-    };
   }, []);
 
   useEffect(() => {
