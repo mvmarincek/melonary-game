@@ -64,7 +64,7 @@ export async function recordAction(sessionId: string, action: {
 export async function getGlobalRanking(limit: number = 100): Promise<any[]> {
   return query(`
     SELECT ROW_NUMBER() OVER (ORDER BY total_score DESC) as position,
-           id as user_id, username, total_score as score, current_phase as phase
+           id as user_id, username, total_score as score, current_phase as phase, highest_combo as combo
     FROM users
     ORDER BY total_score DESC
     LIMIT $1
@@ -78,7 +78,7 @@ export async function getWeeklyRanking(limit: number = 100): Promise<any[]> {
   
   return query(`
     SELECT ROW_NUMBER() OVER (ORDER BY ws.score DESC) as position,
-           u.id as user_id, u.username, ws.score, u.current_phase as phase
+           u.id as user_id, u.username, ws.score, u.current_phase as phase, u.highest_combo as combo
     FROM weekly_scores ws
     JOIN users u ON u.id = ws.user_id
     WHERE ws.week_start >= $1

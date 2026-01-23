@@ -11,6 +11,7 @@ interface RankingEntry {
   username: string;
   score: number;
   phase: number;
+  combo: number;
 }
 
 export default function Ranking() {
@@ -84,9 +85,10 @@ export default function Ranking() {
           ) : (
             <div className="space-y-2">
               <div className="flex text-xs text-gray-500 px-2 pb-3 border-b border-gray-800">
-                <div className="w-12 text-center">#</div>
+                <div className="w-10 text-center">#</div>
                 <div className="flex-1">{t('ranking.player', language)}</div>
-                <div className="w-24 text-right">{t('ranking.score', language)}</div>
+                <div className="w-16 text-center">{t('game.combo', language)}</div>
+                <div className="w-20 text-right">{t('ranking.score', language)}</div>
               </div>
               
               <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
@@ -100,24 +102,27 @@ export default function Ranking() {
                     }`}
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <div className="w-12 flex justify-center">
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${getRankBadge(entry.position)}`}>
+                    <div className="w-10 flex justify-center">
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${getRankBadge(entry.position)}`}>
                         {entry.position}
                       </span>
                     </div>
                     <div className="flex-1 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black text-xs font-bold">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black text-xs font-bold">
                         {entry.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <span className="text-white font-medium text-sm">{entry.username}</span>
                         {entry.user_id === user?.id && (
-                          <span className="badge badge-gold text-[10px] ml-2 py-0.5 px-1.5">{t('ranking.you', language)}</span>
+                          <span className="badge badge-gold text-[10px] ml-1 py-0.5 px-1">{t('ranking.you', language)}</span>
                         )}
                         <p className="text-xs text-gray-500">{t('game.phase', language)} {entry.phase}</p>
                       </div>
                     </div>
-                    <div className="w-24 text-right">
+                    <div className="w-16 text-center">
+                      <span className="text-orange-400 font-bold text-sm">{entry.combo}x</span>
+                    </div>
+                    <div className="w-20 text-right">
                       <span className="font-bold text-yellow-400 text-glow-sm">
                         {entry.score.toLocaleString()}
                       </span>
