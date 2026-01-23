@@ -12,14 +12,24 @@ export async function seedDatabase(): Promise<void> {
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
-  const existingAdmin = await query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+  const existingAdmin = await query('SELECT id FROM users WHERE email = $1 OR username = $2', [adminEmail, 'admin']);
   
   if (existingAdmin.length === 0) {
-    await execute(`
-      INSERT INTO users (id, name, email, username, password_hash, is_admin, language)
-      VALUES ($1, 'Admin', $2, 'admin', $3, true, 'en')
-    `, [uuid(), adminEmail, passwordHash]);
-    console.log('Admin user created');
+    try {
+      await execute(`
+        INSERT INTO users (id, name, email, username, password_hash, is_admin, language)
+        VALUES ($1, 'Admin', $2, 'admin', $3, true, 'en')
+      `, [uuid(), adminEmail, passwordHash]);
+      console.log('Admin user created');
+    } catch (err: any) {
+      if (err.code === '23505') {
+        console.log('Admin user already exists, skipping...');
+      } else {
+        throw err;
+      }
+    }
+  } else {
+    console.log('Admin user already exists');
   }
 
   const existingPhases = await query('SELECT id FROM phases');
