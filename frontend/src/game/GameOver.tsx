@@ -27,7 +27,7 @@ export default function GameOver({
     <div className="absolute inset-0 flex items-center justify-center z-50 glass-dark safe-top safe-bottom">
       <div className="w-full max-w-sm mx-4 text-center animate-slide-up">
         <div className="card p-6">
-          <h2 className="font-game text-2xl text-glow-gold mb-4" style={{ color: '#FFD700' }}>
+          <h2 className="text-2xl text-glow-gold mb-4" style={{ color: '#FFD700', fontFamily: 'Orbitron, sans-serif', fontWeight: 'bold' }}>
             {t('game.game_over', language)}
           </h2>
 

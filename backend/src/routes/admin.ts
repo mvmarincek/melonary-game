@@ -163,4 +163,17 @@ router.delete('/assets/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.post('/reset-scores', async (req: AuthRequest, res: Response) => {
+  try {
+    await query('UPDATE users SET total_score = 0, current_phase = 1, highest_combo = 0, games_played = 0');
+    await query('DELETE FROM weekly_scores');
+    await query('DELETE FROM game_sessions');
+    await query('DELETE FROM game_actions');
+    res.json({ success: true, message: 'All scores reset successfully' });
+  } catch (error) {
+    console.error('Reset scores error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
