@@ -18,7 +18,7 @@ interface GameResults {
 
 export default function Game() {
   const navigate = useNavigate();
-  const { game, setGameState, resetGame, language } = useStore();
+  const { game, setGameState, resetGame, language, setUser } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
 
@@ -61,6 +61,12 @@ export default function Game() {
         accuracy: result.accuracy,
         newRecord: result.newRecord,
       });
+      
+      try {
+        const userData = await api.auth.me() as any;
+        setUser(userData.user || userData);
+      } catch {}
+      
       setGameState({ isPlaying: false, isPaused: false });
       audioManager.stopMusic();
       audioManager.playSound('game_over');
