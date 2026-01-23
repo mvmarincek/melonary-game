@@ -1,5 +1,3 @@
-import { useStore } from '../hooks/useStore';
-
 interface GameUIProps {
   onPause: () => void;
   onQuit?: () => void;
