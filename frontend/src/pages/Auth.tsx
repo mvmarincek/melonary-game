@@ -69,7 +69,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-[#0D0D14] overflow-y-auto">
-      <div className="min-h-screen flex flex-col p-4 pb-8">
+      <div className="min-h-screen flex flex-col p-4 pt-12 pb-8">
         <header className="flex justify-center items-center mb-4">
           <MelonaryLogo size={200} />
         </header>

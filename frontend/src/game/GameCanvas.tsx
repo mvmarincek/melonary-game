@@ -8,7 +8,7 @@ const getAudioContext = () => {
   return audioCtx;
 };
 
-const MASTER_VOLUME = 0.25;
+const MASTER_VOLUME = 0.7;
 
 const playBark = () => {
   try {
@@ -92,6 +92,36 @@ const playHowl = () => {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.7);
   } catch {}
+};
+
+let bgMusicInterval: number | null = null;
+const startBgMusic = () => {
+  if (bgMusicInterval) return;
+  const playBeat = () => {
+    try {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const notes = [130.81, 146.83, 164.81, 174.61, 196.00, 220.00];
+      osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+      gain.gain.setValueAtTime(0.08 * MASTER_VOLUME, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {}
+  };
+  playBeat();
+  bgMusicInterval = window.setInterval(playBeat, 800);
+};
+const stopBgMusic = () => {
+  if (bgMusicInterval) {
+    clearInterval(bgMusicInterval);
+    bgMusicInterval = null;
+  }
 };
 
 interface Motorcycle {
@@ -197,6 +227,15 @@ export default function GameCanvas() {
     setPhaseStartTime(Date.now());
     setPhaseTimeLeft(PHASE_DURATION_MS);
   }, [game.phase]);
+
+  useEffect(() => {
+    if (game.isPlaying && !game.isPaused) {
+      startBgMusic();
+    } else {
+      stopBgMusic();
+    }
+    return () => stopBgMusic();
+  }, [game.isPlaying, game.isPaused]);
 
   useEffect(() => {
     if (!game.isPlaying || game.isPaused) return;
@@ -468,9 +507,11 @@ export default function GameCanvas() {
       ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(40 * SCALE));
       
       ctx.textAlign = 'right';
-      ctx.font = `bold ${Math.round(12 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
       ctx.fillStyle = '#FF6347';
-      ctx.fillText('SAIR', CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(32 * SCALE));
+      const pauseX = CANVAS_WIDTH - Math.round(12 * SCALE);
+      const pauseY = Math.round(32 * SCALE);
+      ctx.fillText('|| PAUSE', pauseX, pauseY);
       
       if (comboDisplay.visible && comboDisplay.value >= 3) {
         const comboAlpha = Math.min(1, (30 - comboDisplay.frame) / 10);
@@ -502,7 +543,7 @@ export default function GameCanvas() {
 
   return (
     <div 
-      className="flex flex-col items-center min-h-screen p-2 sm:p-4 overflow-y-auto" 
+      className="flex flex-col items-center min-h-screen pt-8 p-2 sm:p-4 sm:pt-4 overflow-y-auto" 
       style={{ 
         backgroundImage: 'url(/assets/mural-bg.jpg)', 
         backgroundSize: 'cover', 
@@ -523,24 +564,40 @@ export default function GameCanvas() {
           height={CANVAS_HEIGHT} 
           className="border-2 border-yellow-500/50 rounded-lg w-full"
           style={{ 
-            maxHeight: 'calc(100vh - 280px)',
+            maxHeight: 'calc(100vh - 320px)',
             aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
         />
-        <div className="grid grid-cols-2 gap-3 mt-3 sm:hidden">
-          <button 
-            onTouchStart={switchLane} 
-            className="h-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-lg text-yellow-500 font-bold active:bg-yellow-500/30"
-          >
-            TROCAR FAIXA
-          </button>
-          <button 
-            onTouchStart={() => handleKick()} 
-            className="h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
-          >
-            CHUTE!
-          </button>
+        <div className="flex gap-2 mt-3 sm:hidden">
+          <div className="flex flex-col gap-2">
+            <button 
+              onTouchStart={() => moveVertical('up')} 
+              className="h-12 w-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+            >
+              ↑
+            </button>
+            <button 
+              onTouchStart={() => moveVertical('down')} 
+              className="h-12 w-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+            >
+              ↓
+            </button>
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <button 
+              onTouchStart={switchLane} 
+              className="h-12 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-base text-yellow-500 font-bold active:bg-yellow-500/30"
+            >
+              TROCAR FAIXA
+            </button>
+            <button 
+              onTouchStart={() => handleKick()} 
+              className="h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
+            >
+              CHUTE!
+            </button>
+          </div>
         </div>
         <p className="mt-2 text-white/50 text-xs text-center hidden sm:block">
           Setas = mover | ESPACO = voadora
