@@ -346,8 +346,14 @@ export default function GameCanvas() {
   }, [game.isPlaying, game.isPaused, switchLane, moveVertical, handleKick, setGameState]);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     let startX = 0, startY = 0;
-    const onStart = (e: TouchEvent) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; };
+    const onStart = (e: TouchEvent) => { 
+      startX = e.touches[0].clientX; 
+      startY = e.touches[0].clientY; 
+    };
     const onEnd = (e: TouchEvent) => {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
@@ -355,9 +361,12 @@ export default function GameCanvas() {
       else if (Math.abs(dx) > Math.abs(dy)) switchLane();
       else moveVertical(dy > 0 ? 'down' : 'up');
     };
-    window.addEventListener('touchstart', onStart, { passive: true });
-    window.addEventListener('touchend', onEnd, { passive: true });
-    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd); };
+    canvas.addEventListener('touchstart', onStart, { passive: true });
+    canvas.addEventListener('touchend', onEnd, { passive: true });
+    return () => { 
+      canvas.removeEventListener('touchstart', onStart); 
+      canvas.removeEventListener('touchend', onEnd); 
+    };
   }, [switchLane, moveVertical, handleKick]);
 
   useEffect(() => {
