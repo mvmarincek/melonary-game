@@ -142,7 +142,7 @@ interface FloatingText {
 }
 
 const BASE_WIDTH = 400;
-const BASE_HEIGHT = 700;
+const BASE_HEIGHT = 550;
 const SCALE = 1.5;
 const CANVAS_WIDTH = Math.round(BASE_WIDTH * SCALE);
 const CANVAS_HEIGHT = Math.round(BASE_HEIGHT * SCALE);
