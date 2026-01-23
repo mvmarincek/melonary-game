@@ -533,12 +533,11 @@ export default function GameCanvas() {
 
   return (
     <div 
-      className="flex flex-col items-center p-2 sm:p-4 pb-8" 
+      className="flex flex-col items-center p-2 sm:p-4 pb-8 overflow-y-auto" 
       style={{ 
         backgroundImage: 'url(/assets/mural-bg.jpg)', 
         backgroundSize: 'cover', 
-        backgroundPosition: 'center',
-        minHeight: '100vh'
+        backgroundPosition: 'center'
       }}
     >
       <div 
@@ -554,7 +553,6 @@ export default function GameCanvas() {
           height={CANVAS_HEIGHT} 
           className="border-2 border-yellow-500/50 rounded-lg w-full"
           style={{ 
-            maxHeight: 'calc(100vh - 280px)',
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
         />
