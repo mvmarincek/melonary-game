@@ -118,7 +118,7 @@ const CANVAS_WIDTH = Math.round(BASE_WIDTH * SCALE);
 const CANVAS_HEIGHT = Math.round(BASE_HEIGHT * SCALE);
 const LANE_LEFT_X = Math.round(145 * SCALE);
 const LANE_RIGHT_X = Math.round(255 * SCALE);
-const SPRITE_SIZE = Math.round(60 * SCALE);
+const SPRITE_SIZE = Math.round(85 * SCALE);
 const PHASE_DURATION_MS = 3 * 60 * 1000;
 
 const CITIES = [
@@ -528,28 +528,16 @@ export default function GameCanvas() {
             boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)' 
           }} 
         />
-        <div className="grid grid-cols-4 gap-2 mt-2 sm:hidden">
-          <button 
-            onTouchStart={() => moveVertical('up')} 
-            className="h-14 bg-black/80 border border-yellow-500/40 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/20"
-          >
-            ↑
-          </button>
-          <button 
-            onTouchStart={() => moveVertical('down')} 
-            className="h-14 bg-black/80 border border-yellow-500/40 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/20"
-          >
-            ↓
-          </button>
+        <div className="grid grid-cols-2 gap-3 mt-3 sm:hidden">
           <button 
             onTouchStart={switchLane} 
-            className="h-14 bg-black/80 border border-yellow-500/40 rounded-xl text-xs text-yellow-500 font-bold active:bg-yellow-500/20"
+            className="h-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-lg text-yellow-500 font-bold active:bg-yellow-500/30"
           >
-            TROCA
+            TROCAR FAIXA
           </button>
           <button 
             onTouchStart={() => handleKick()} 
-            className="h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-sm font-bold text-black active:scale-95"
+            className="h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
           >
             CHUTE!
           </button>

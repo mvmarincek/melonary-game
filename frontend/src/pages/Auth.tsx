@@ -68,149 +68,108 @@ export default function Auth() {
   };
 
   return (
-    <div className="bg-page flex flex-col items-center p-4 safe-top safe-bottom relative overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-[#0D0D14] overflow-y-auto">
+      <div className="min-h-screen flex flex-col p-4 pb-8">
+        <header className="flex justify-between items-center mb-4">
+          <Link to="/" className="text-yellow-500 text-sm flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </Link>
+          <MelonaryLogo size={40} />
+        </header>
 
-      <header className="relative z-10 w-full flex justify-between items-center mb-6">
-        <Link to="/" className="btn-ghost text-yellow-500 text-sm flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Voltar
-        </Link>
-        <MelonaryLogo size={48} />
-      </header>
-
-      <main className="relative z-10 w-full max-w-sm animate-slide-up">
-        <div className="card">
-          <div className="text-center mb-6">
-            <div className="avatar-ring w-16 h-16 mx-auto mb-4">
-              <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                <img 
-                  src="/melonary-hero.png" 
-                  alt="Melonary"
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            </div>
-            <h1 className="font-game text-xl text-glow-gold mb-1" style={{ color: '#FFD700' }}>
-              MELONARY
-            </h1>
+        <main className="flex-1 w-full max-w-sm mx-auto">
+          <div className="text-center mb-4">
+            <h1 className="text-xl font-bold text-yellow-400 mb-1">MELONARY</h1>
             <p className="text-gray-500 text-sm">
               {mode === 'login' ? t('auth.login', language) : t('auth.register', language)}
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+            <div className="mb-3 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'register' && (
               <>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">{t('auth.name', language)}</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="input-field"
-                    placeholder="Seu nome"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">{t('auth.username', language)}</label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                    pattern="[a-zA-Z0-9_]+"
-                    className="input-field"
-                    placeholder="nome_no_jogo"
-                  />
-                </div>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="input-field text-sm"
+                  placeholder="Seu nome"
+                />
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                  pattern="[a-zA-Z0-9_]+"
+                  className="input-field text-sm"
+                  placeholder="Nome no jogo"
+                />
               </>
             )}
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">{t('auth.email', language)}</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="input-field"
-                placeholder="seu@email.com"
-              />
-            </div>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="input-field text-sm"
+              placeholder="seu@email.com"
+            />
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">{t('auth.password', language)}</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                minLength={6}
-                className="input-field"
-                placeholder="******"
-              />
-            </div>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength={6}
+              className="input-field text-sm"
+              placeholder="Senha (min 6 caracteres)"
+            />
 
             {mode === 'register' && (
               <>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">{t('settings.language', language)}</label>
-                  <select
-                    name="language"
-                    value={formData.language}
-                    onChange={handleChange}
-                    className="input-field"
-                  >
-                    <option value="en">English</option>
-                    <option value="pt">Portugues</option>
-                    <option value="es">Espanol</option>
-                  </select>
-                </div>
+                <select
+                  name="language"
+                  value={formData.language}
+                  onChange={handleChange}
+                  className="input-field text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="pt">Portugues</option>
+                  <option value="es">Espanol</option>
+                </select>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-2">X (Twitter)</label>
-                    <input
-                      type="text"
-                      name="x_username"
-                      value={formData.x_username}
-                      onChange={handleChange}
-                      placeholder="@usuario"
-                      className="input-field text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-2">TikTok</label>
-                    <input
-                      type="text"
-                      name="tiktok_username"
-                      value={formData.tiktok_username}
-                      onChange={handleChange}
-                      placeholder="@usuario"
-                      className="input-field text-sm"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    name="x_username"
+                    value={formData.x_username}
+                    onChange={handleChange}
+                    placeholder="@twitter"
+                    className="input-field text-sm"
+                  />
+                  <input
+                    type="text"
+                    name="tiktok_username"
+                    value={formData.tiktok_username}
+                    onChange={handleChange}
+                    placeholder="@tiktok"
+                    className="input-field text-sm"
+                  />
                 </div>
               </>
             )}
@@ -218,17 +177,18 @@ export default function Auth() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full text-center mt-6 disabled:opacity-50"
+              className="w-full py-3 rounded-xl font-bold text-black transition-all active:scale-95 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)' }}
             >
               {isLoading
-                ? t('game.loading', language)
+                ? 'Carregando...'
                 : mode === 'login'
                 ? t('auth.login', language)
                 : t('auth.register', language)}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <button
               onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
               className="text-yellow-500 text-sm"
@@ -244,18 +204,18 @@ export default function Auth() {
               <button
                 key={lang}
                 onClick={() => setLanguage(lang)}
-                className={`px-4 py-2 text-xs rounded-lg font-bold transition-all ${
+                className={`px-3 py-1.5 text-xs rounded-lg font-bold ${
                   language === lang
-                    ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-black'
-                    : 'bg-gray-800 text-gray-400 border border-gray-700'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-gray-800 text-gray-400'
                 }`}
               >
                 {lang.toUpperCase()}
               </button>
             ))}
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
