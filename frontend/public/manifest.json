@@ -1,7 +1,7 @@
 {
   "name": "Melonary - Flying Kick!",
   "short_name": "Melonary",
-  "description": "O jogo do cachorro caramelo badboy! Chute motoqueiros com voadoras e ganhe tokens!",
+  "description": "The badboy caramel dog game! Kick bikers with flying kicks and earn tokens!",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -22,7 +22,7 @@
     }
   ],
   "categories": ["games", "entertainment"],
-  "lang": "pt-BR",
+  "lang": "en",
   "dir": "ltr",
   "scope": "/",
   "prefer_related_applications": false

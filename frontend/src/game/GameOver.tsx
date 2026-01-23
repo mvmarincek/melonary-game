@@ -48,15 +48,15 @@ export default function GameOver({
             <div className="grid grid-cols-3 gap-3 pt-3">
               <div className="text-center p-3 rounded-xl bg-gray-800/50">
                 <p className="text-white font-bold text-lg">{phaseReached}</p>
-                <p className="text-gray-500 text-xs">Fase</p>
+                <p className="text-gray-500 text-xs">{t('game.phase', language)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-gray-800/50">
                 <p className="text-orange-400 font-bold text-lg">{maxCombo}x</p>
-                <p className="text-gray-500 text-xs">Combo</p>
+                <p className="text-gray-500 text-xs">{t('game.combo', language)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-gray-800/50">
                 <p className="text-white font-bold text-lg">{accuracy}%</p>
-                <p className="text-gray-500 text-xs">Precisao</p>
+                <p className="text-gray-500 text-xs">{t('game.accuracy', language)}</p>
               </div>
             </div>
           </div>

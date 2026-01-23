@@ -23,7 +23,7 @@ export default function Home() {
         </div>
         
         <p className="text-xl font-bold text-orange-400 mb-1">Flying Kick!</p>
-        <p className="text-gray-500 text-sm text-center mb-6">Derrube os motoqueiros com voadoras!</p>
+        <p className="text-gray-500 text-sm text-center mb-6">{t('game.description', language)}</p>
 
         {user && (
           <div className="card-highlight w-full mb-5 text-center animate-slide-up">
@@ -33,7 +33,7 @@ export default function Home() {
               </div>
               <div className="text-left">
                 <p className="text-white font-bold">{user.username}</p>
-                <p className="text-xs text-gray-400">Fase {user.current_phase}</p>
+                <p className="text-xs text-gray-400">{t('game.phase', language)} {user.current_phase}</p>
               </div>
             </div>
             <div className="flex justify-center gap-6 text-sm">

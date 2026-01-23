@@ -51,7 +51,7 @@ export default function Ranking() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Voltar
+            {t('menu.back', language)}
           </Link>
           <h1 className="font-game text-lg text-glow-gold" style={{ color: '#FFD700' }}>
             {t('menu.ranking', language)}
@@ -80,13 +80,13 @@ export default function Ranking() {
               <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : ranking.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">Nenhum jogador ainda</div>
+            <div className="text-center py-12 text-gray-500">{t('ranking.empty', language)}</div>
           ) : (
             <div className="space-y-2">
               <div className="flex text-xs text-gray-500 px-2 pb-3 border-b border-gray-800">
                 <div className="w-12 text-center">#</div>
-                <div className="flex-1">Jogador</div>
-                <div className="w-24 text-right">Pontos</div>
+                <div className="flex-1">{t('ranking.player', language)}</div>
+                <div className="w-24 text-right">{t('ranking.score', language)}</div>
               </div>
               
               <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
@@ -112,9 +112,9 @@ export default function Ranking() {
                       <div>
                         <span className="text-white font-medium text-sm">{entry.username}</span>
                         {entry.user_id === user?.id && (
-                          <span className="badge badge-gold text-[10px] ml-2 py-0.5 px-1.5">voce</span>
+                          <span className="badge badge-gold text-[10px] ml-2 py-0.5 px-1.5">{t('ranking.you', language)}</span>
                         )}
-                        <p className="text-xs text-gray-500">Fase {entry.phase}</p>
+                        <p className="text-xs text-gray-500">{t('game.phase', language)} {entry.phase}</p>
                       </div>
                     </div>
                     <div className="w-24 text-right">

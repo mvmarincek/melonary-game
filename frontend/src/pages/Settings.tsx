@@ -37,7 +37,7 @@ export default function Settings() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Voltar
+            {t('menu.back', language)}
           </Link>
           <h1 className="font-game text-lg text-glow-gold" style={{ color: '#FFD700' }}>
             {t('menu.settings', language)}
@@ -79,7 +79,7 @@ export default function Settings() {
             </h3>
 
             <div className="flex items-center justify-between py-3 border-b border-gray-800">
-              <span className="text-white font-medium">Ativar Som</span>
+              <span className="text-white font-medium">{t('settings.sound_on', language)}</span>
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`w-14 h-8 rounded-full transition-all relative ${soundEnabled ? 'glow-gold' : ''}`}
@@ -133,7 +133,7 @@ export default function Settings() {
               disabled={isSaving}
               className={`w-full mt-2 py-3 rounded-xl font-bold transition-all ${saved ? 'bg-green-500 text-white' : 'btn-primary'} disabled:opacity-50`}
             >
-              {isSaving ? t('game.loading', language) : saved ? 'Salvo!' : t('settings.save', language)}
+              {isSaving ? t('game.loading', language) : saved ? t('settings.saved', language) : t('settings.save', language)}
             </button>
           </div>
 
@@ -165,7 +165,7 @@ export default function Settings() {
                 </div>
                 <div className="text-center p-3 rounded-xl bg-gray-800/50">
                   <p className="text-white font-bold text-lg">{user.games_played}</p>
-                  <p className="text-gray-500 text-xs">Partidas</p>
+                  <p className="text-gray-500 text-xs">{t('game.games', language)}</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-gray-800/50">
                   <p className="text-orange-400 font-bold text-lg">{user.highest_combo}x</p>

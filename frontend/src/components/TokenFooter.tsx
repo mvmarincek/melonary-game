@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useStore } from '../hooks/useStore';
+import { t } from '../i18n/translations';
 
 export const CONTRACT = '4CQuDuiNrbKun9ot5BJnZAnjzpsv94NY5z4mb5uhpump';
 export const STORE_URL = 'https://cachorrocaramelo.store';
@@ -113,6 +115,7 @@ export function SocialButtons() {
 
 export function ContractBanner({ size = 'normal' }: { size?: 'small' | 'normal' | 'large' }) {
   const [copied, setCopied] = useState(false);
+  const { language } = useStore();
 
   const copy = async () => {
     try {
@@ -135,7 +138,7 @@ export function ContractBanner({ size = 'normal' }: { size?: 'small' | 'normal' 
       >
         <div className="flex items-center gap-3 mb-3">
           <SolanaLogo size={isLarge ? 36 : 28} />
-          <span className="text-gray-400 text-sm font-medium">Contrato Solana</span>
+          <span className="text-gray-400 text-sm font-medium">{t('footer.contract', language)}</span>
         </div>
         
         <div 
@@ -161,7 +164,7 @@ export function ContractBanner({ size = 'normal' }: { size?: 'small' | 'normal' 
                 <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
               )}
             </svg>
-            {copied ? 'Copiado!' : 'Copiar Contrato'}
+            {copied ? t('footer.copied', language) : t('footer.copy', language)}
           </button>
         </div>
       </div>
@@ -209,6 +212,7 @@ export function InstallButton() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const { language } = useStore();
 
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -259,28 +263,28 @@ export function InstallButton() {
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
-        Instalar App
+        {t('footer.install', language)}
       </button>
       
       {showIOSModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setShowIOSModal(false)}>
           <div className="bg-gray-900 rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white mb-4 text-center">Instalar no iPhone/iPad</h3>
+            <h3 className="text-lg font-bold text-white mb-4 text-center">{t('footer.install_ios', language)}</h3>
             <div className="space-y-3 text-gray-300 text-sm">
               <p className="flex items-center gap-3">
                 <span className="w-6 h-6 bg-yellow-500 text-black rounded-full flex items-center justify-center font-bold text-xs">1</span>
-                Toque no botao de compartilhar
+                {t('footer.ios_step1', language)}
                 <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </p>
               <p className="flex items-center gap-3">
                 <span className="w-6 h-6 bg-yellow-500 text-black rounded-full flex items-center justify-center font-bold text-xs">2</span>
-                Role e toque em "Adicionar a Tela Inicio"
+                {t('footer.ios_step2', language)}
               </p>
               <p className="flex items-center gap-3">
                 <span className="w-6 h-6 bg-yellow-500 text-black rounded-full flex items-center justify-center font-bold text-xs">3</span>
-                Toque em "Adicionar" no canto superior
+                {t('footer.ios_step3', language)}
               </p>
             </div>
             <button 
@@ -288,7 +292,7 @@ export function InstallButton() {
               className="w-full mt-5 py-3 rounded-xl font-bold text-black"
               style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)' }}
             >
-              Entendi
+              {t('footer.understood', language)}
             </button>
           </div>
         </div>
@@ -299,6 +303,7 @@ export function InstallButton() {
 
 export function GameFooter() {
   const [copied, setCopied] = useState(false);
+  const { language } = useStore();
 
   const copy = async () => {
     try {
@@ -321,7 +326,7 @@ export function GameFooter() {
       >
         <div className="flex items-center gap-3 mb-2">
           <SolanaLogo size={24} />
-          <span className="text-gray-400 text-xs font-medium">Contrato Solana</span>
+          <span className="text-gray-400 text-xs font-medium">{t('footer.contract', language)}</span>
         </div>
         
         <div className="flex items-center gap-2">

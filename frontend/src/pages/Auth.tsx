@@ -97,7 +97,7 @@ export default function Auth() {
                   onChange={handleChange}
                   required
                   className="input-field text-sm"
-                  placeholder="Seu nome"
+                  placeholder={t('auth.your_name', language)}
                 />
                 <input
                   type="text"
@@ -107,7 +107,7 @@ export default function Auth() {
                   required
                   pattern="[a-zA-Z0-9_]+"
                   className="input-field text-sm"
-                  placeholder="Nome no jogo"
+                  placeholder={t('auth.game_name', language)}
                 />
               </>
             )}
@@ -119,7 +119,7 @@ export default function Auth() {
               onChange={handleChange}
               required
               className="input-field text-sm"
-              placeholder="seu@email.com"
+              placeholder={t('auth.your_email', language)}
             />
 
             <input
@@ -130,7 +130,7 @@ export default function Auth() {
               required
               minLength={6}
               className="input-field text-sm"
-              placeholder="Senha (min 6 caracteres)"
+              placeholder={t('auth.password_hint', language)}
             />
 
             {mode === 'register' && (
@@ -174,7 +174,7 @@ export default function Auth() {
               style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)' }}
             >
               {isLoading
-                ? 'Carregando...'
+                ? t('game.loading', language)
                 : mode === 'login'
                 ? t('auth.login', language)
                 : t('auth.register', language)}
