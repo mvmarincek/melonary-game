@@ -42,10 +42,6 @@ export default function Game() {
     }
   };
 
-  const pauseGame = () => {
-    setGameState({ isPaused: true });
-  };
-
   const resumeGame = () => {
     setGameState({ isPaused: false });
   };
