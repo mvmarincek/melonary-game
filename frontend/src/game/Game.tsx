@@ -6,7 +6,7 @@ import { audioManager } from '../services/audio';
 import GameCanvas from './GameCanvas';
 import GameOver from './GameOver';
 import { t } from '../i18n/translations';
-import { MelonaryLogo, ContractBanner } from '../components/TokenFooter';
+import { ContractBanner } from '../components/TokenFooter';
 
 interface GameResults {
   finalScore: number;
@@ -97,10 +97,6 @@ export default function Game() {
 
         <main className="relative z-10 w-full max-w-sm text-center animate-slide-up">
           <div className="card p-6">
-            <div className="flex justify-center mb-4">
-              <MelonaryLogo size={180} />
-            </div>
-
             <div className="mb-6">
               <div className="w-48 h-48 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900" style={{ border: '3px solid #FFD700', boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)' }}>
                 <img 
