@@ -433,7 +433,6 @@ export default function GameCanvas() {
         const img = m.isFat ? motoFatImg.current : motoThinImg.current;
         ctx.save();
         ctx.translate(x, m.y);
-        if (m.lane === 1) ctx.rotate(Math.PI);
         if (img?.complete) ctx.drawImage(img, -size / 2, -size / 2, size, size);
         ctx.restore();
       });
