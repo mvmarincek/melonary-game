@@ -28,9 +28,9 @@ export default function Game() {
       const result = await api.game.start() as any;
       setGameState({
         sessionId: result.sessionId,
-        score: 0,
+        score: game.savedScore,
         combo: 0,
-        phase: 1,
+        phase: game.savedPhase,
         isPlaying: true,
         isPaused: false,
       });

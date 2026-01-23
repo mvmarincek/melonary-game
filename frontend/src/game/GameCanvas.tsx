@@ -185,6 +185,7 @@ const SPRITE_SIZE = Math.round(130 * SCALE);
 const PHASE_DURATION_MS = 2 * 60 * 1000;
 const PHASE_TARGET_SCORE = 500;
 const PHASE_BONUS = 300;
+const MAX_PHASES = 96;
 
 const CITIES = [
   'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
@@ -217,7 +218,7 @@ const CITY_BACKGROUNDS = [
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { game, setGameState } = useStore();
+  const { game, setGameState, saveProgress } = useStore();
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([]);
   const [texts, setTexts] = useState<FloatingText[]>([]);
   const [playerLane, setPlayerLane] = useState<0 | 1>(0);
@@ -265,7 +266,8 @@ export default function GameCanvas() {
     setPhaseTimeLeft(PHASE_DURATION_MS);
     setPhaseScore(0);
     setPhaseBonusAwarded(false);
-  }, [game.phase]);
+    saveProgress();
+  }, [game.phase, saveProgress]);
 
   useEffect(() => {
     if (game.isPlaying && !game.isPaused) {
@@ -282,7 +284,10 @@ export default function GameCanvas() {
       const elapsed = Date.now() - phaseStartTime;
       const remaining = Math.max(0, PHASE_DURATION_MS - elapsed);
       setPhaseTimeLeft(remaining);
-      if (remaining <= 0) setGameState({ phase: game.phase + 1 });
+      if (remaining <= 0) {
+        const nextPhase = game.phase >= MAX_PHASES ? 1 : game.phase + 1;
+        setGameState({ phase: nextPhase });
+      }
     }, 1000);
     return () => clearInterval(interval);
   }, [game.isPlaying, game.isPaused, game.phase, phaseStartTime, setGameState]);
@@ -356,7 +361,8 @@ export default function GameCanvas() {
           newScore += PHASE_BONUS;
           setTexts(t => [...t, { id: textIdRef.current++, x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, text: `BONUS +${PHASE_BONUS}!`, frame: 0 }]);
           setTimeout(() => playHowl(), 100);
-          setGameState({ score: newScore, combo: newCombo, phase: game.phase + 1 });
+          const nextPhase = game.phase >= MAX_PHASES ? 1 : game.phase + 1;
+          setGameState({ score: newScore, combo: newCombo, phase: nextPhase });
         } else {
           setGameState({ score: newScore, combo: newCombo });
         }

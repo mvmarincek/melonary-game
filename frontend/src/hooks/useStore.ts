@@ -25,6 +25,8 @@ interface GameState {
   phase: number;
   isPlaying: boolean;
   isPaused: boolean;
+  savedScore: number;
+  savedPhase: number;
 }
 
 interface AppStore {
@@ -42,6 +44,7 @@ interface AppStore {
   setMusicVolume: (volume: number) => void;
   setSfxVolume: (volume: number) => void;
   setGameState: (state: Partial<GameState>) => void;
+  saveProgress: () => void;
   resetGame: () => void;
   logout: () => void;
 }
@@ -53,6 +56,8 @@ const initialGameState: GameState = {
   phase: 1,
   isPlaying: false,
   isPaused: false,
+  savedScore: 0,
+  savedPhase: 1,
 };
 
 export const useStore = create<AppStore>()(
@@ -73,7 +78,24 @@ export const useStore = create<AppStore>()(
       setSfxVolume: (sfxVolume) => set({ sfxVolume }),
       setGameState: (state) =>
         set((prev) => ({ game: { ...prev.game, ...state } })),
-      resetGame: () => set({ game: initialGameState }),
+      saveProgress: () =>
+        set((prev) => ({ 
+          game: { 
+            ...prev.game, 
+            savedScore: prev.game.score, 
+            savedPhase: prev.game.phase 
+          } 
+        })),
+      resetGame: () => 
+        set((prev) => ({ 
+          game: { 
+            ...initialGameState, 
+            savedScore: prev.game.savedScore, 
+            savedPhase: prev.game.savedPhase,
+            score: prev.game.savedScore,
+            phase: prev.game.savedPhase,
+          } 
+        })),
       logout: () => set({ user: null, token: null, game: initialGameState }),
     }),
     {
@@ -85,6 +107,10 @@ export const useStore = create<AppStore>()(
         soundEnabled: state.soundEnabled,
         musicVolume: state.musicVolume,
         sfxVolume: state.sfxVolume,
+        game: {
+          savedScore: state.game.savedScore,
+          savedPhase: state.game.savedPhase,
+        },
       }),
     }
   )
