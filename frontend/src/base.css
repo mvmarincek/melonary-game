@@ -4,5 +4,6 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   touch-action: manipulation;
+  font-family: 'Orbitron', sans-serif;
 }
 #root { width: 100%; min-height: 100vh; min-height: 100dvh; }

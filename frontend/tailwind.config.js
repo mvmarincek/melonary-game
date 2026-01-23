@@ -14,7 +14,8 @@ export default {
         'dark-border': '#1F1F2E',
       },
       fontFamily: {
-        game: ['Press Start 2P', 'monospace'],
+        game: ['Orbitron', 'sans-serif'],
+        display: ['Bebas Neue', 'sans-serif'],
       },
     },
   },

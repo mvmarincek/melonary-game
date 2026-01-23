@@ -95,27 +95,60 @@ const playHowl = () => {
 };
 
 let bgMusicInterval: number | null = null;
+let beatCount = 0;
 const startBgMusic = () => {
   if (bgMusicInterval) return;
-  const playBeat = () => {
+  beatCount = 0;
+  const playActionBeat = () => {
     try {
       const ctx = getAudioContext();
       if (ctx.state === 'suspended') ctx.resume();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      const notes = [130.81, 146.83, 164.81, 174.61, 196.00, 220.00];
-      osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
-      gain.gain.setValueAtTime(0.08 * MASTER_VOLUME, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
+      const now = ctx.currentTime;
+      const kick = ctx.createOscillator();
+      const kickGain = ctx.createGain();
+      kick.connect(kickGain);
+      kickGain.connect(ctx.destination);
+      kick.type = 'sine';
+      kick.frequency.setValueAtTime(150, now);
+      kick.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+      kickGain.gain.setValueAtTime(0.4 * MASTER_VOLUME, now);
+      kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      kick.start(now);
+      kick.stop(now + 0.15);
+      if (beatCount % 2 === 1) {
+        const snare = ctx.createOscillator();
+        const snareGain = ctx.createGain();
+        const snareFilter = ctx.createBiquadFilter();
+        snare.connect(snareFilter);
+        snareFilter.connect(snareGain);
+        snareGain.connect(ctx.destination);
+        snare.type = 'triangle';
+        snare.frequency.value = 200;
+        snareFilter.type = 'highpass';
+        snareFilter.frequency.value = 1000;
+        snareGain.gain.setValueAtTime(0.25 * MASTER_VOLUME, now);
+        snareGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        snare.start(now);
+        snare.stop(now + 0.1);
+      }
+      if (beatCount % 4 === 0) {
+        const bass = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bass.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bass.type = 'sawtooth';
+        const bassNotes = [55, 65.41, 73.42, 82.41];
+        bass.frequency.value = bassNotes[Math.floor(beatCount / 4) % bassNotes.length];
+        bassGain.gain.setValueAtTime(0.15 * MASTER_VOLUME, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        bass.start(now);
+        bass.stop(now + 0.2);
+      }
+      beatCount++;
     } catch {}
   };
-  playBeat();
-  bgMusicInterval = window.setInterval(playBeat, 800);
+  playActionBeat();
+  bgMusicInterval = window.setInterval(playActionBeat, 250);
 };
 const stopBgMusic = () => {
   if (bgMusicInterval) {
@@ -149,7 +182,7 @@ const CANVAS_HEIGHT = Math.round(BASE_HEIGHT * SCALE);
 const LANE_LEFT_X = Math.round(145 * SCALE);
 const LANE_RIGHT_X = Math.round(255 * SCALE);
 const SPRITE_SIZE = Math.round(130 * SCALE);
-const PHASE_DURATION_MS = 3 * 60 * 1000;
+const PHASE_DURATION_MS = 2 * 60 * 1000;
 
 const CITIES = [
   'Rio de Janeiro', 'New York', 'Tokyo', 'Paris', 'Dubai', 'Los Angeles',
@@ -455,7 +488,7 @@ export default function GameCanvas() {
       texts.forEach(t => {
         const alpha = 1 - t.frame / 20;
         ctx.globalAlpha = alpha;
-        ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
+        ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 4;
@@ -470,7 +503,7 @@ export default function GameCanvas() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, hudHeight);
       
       ctx.textAlign = 'left';
-      ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
       ctx.strokeText(`${game.score}`, Math.round(12 * SCALE), Math.round(34 * SCALE));
@@ -478,19 +511,19 @@ export default function GameCanvas() {
       ctx.fillText(`${game.score}`, Math.round(12 * SCALE), Math.round(34 * SCALE));
       
       ctx.textAlign = 'center';
-      ctx.font = `bold ${Math.round(20 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(20 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
       ctx.strokeText(currentCity, CANVAS_WIDTH / 2, Math.round(24 * SCALE));
       ctx.fillStyle = '#FFD700';
       ctx.fillText(currentCity, CANVAS_WIDTH / 2, Math.round(24 * SCALE));
-      ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(14 * SCALE)}px Orbitron`;
       ctx.strokeText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(46 * SCALE));
       ctx.fillStyle = '#4CAF50';
       ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(46 * SCALE));
       
       ctx.textAlign = 'right';
-      ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
+      ctx.font = `bold ${Math.round(24 * SCALE)}px Orbitron`;
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
       ctx.strokeText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
@@ -503,7 +536,7 @@ export default function GameCanvas() {
         const comboColor = comboDisplay.value >= 20 ? '#FF4444' : comboDisplay.value >= 10 ? '#FF8844' : '#FFD700';
         const comboSize = Math.round(28 * SCALE) + Math.min(comboDisplay.value, 30);
         ctx.globalAlpha = Math.max(0, comboAlpha);
-        ctx.font = `bold ${comboSize}px Arial`;
+        ctx.font = `bold ${comboSize}px Orbitron`;
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 5;
@@ -512,7 +545,7 @@ export default function GameCanvas() {
         ctx.fillText(`${comboDisplay.value}x COMBO!`, CANVAS_WIDTH / 2, comboY);
         if (comboDisplay.value >= 10) {
           const label = comboDisplay.value >= 30 ? 'LENDARIO!' : comboDisplay.value >= 20 ? 'INSANO!' : 'EM CHAMAS!';
-          ctx.font = `bold ${Math.round(16 * SCALE)}px Arial`;
+          ctx.font = `bold ${Math.round(16 * SCALE)}px Orbitron`;
           ctx.strokeText(label, CANVAS_WIDTH / 2, comboY + Math.round(25 * SCALE));
           ctx.fillText(label, CANVAS_WIDTH / 2, comboY + Math.round(25 * SCALE));
         }
