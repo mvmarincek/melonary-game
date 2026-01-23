@@ -492,11 +492,12 @@ export default function GameCanvas() {
       ctx.fillText(`Fase ${game.phase} - ${formatTime(phaseTimeLeft)}`, CANVAS_WIDTH / 2, Math.round(40 * SCALE));
       
       ctx.textAlign = 'right';
-      ctx.font = `bold ${Math.round(14 * SCALE)}px Arial`;
-      ctx.fillStyle = '#FF6347';
-      const pauseX = CANVAS_WIDTH - Math.round(12 * SCALE);
-      const pauseY = Math.round(32 * SCALE);
-      ctx.fillText('|| PAUSE', pauseX, pauseY);
+      ctx.font = `bold ${Math.round(24 * SCALE)}px Arial`;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(`${game.score}`, CANVAS_WIDTH - Math.round(12 * SCALE), Math.round(34 * SCALE));
       
       if (comboDisplay.visible && comboDisplay.value >= 3) {
         const comboAlpha = Math.min(1, (30 - comboDisplay.frame) / 10);
@@ -553,34 +554,42 @@ export default function GameCanvas() {
           }} 
         />
         <div className="flex gap-2 mt-3 sm:hidden">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 flex-1">
             <button 
               onTouchStart={() => moveVertical('up')} 
-              className="h-12 w-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
             >
               ↑
             </button>
             <button 
               onTouchStart={() => moveVertical('down')} 
-              className="h-12 w-16 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
+              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-2xl text-yellow-500 active:bg-yellow-500/30"
             >
               ↓
             </button>
           </div>
-          <div className="flex-1 flex flex-col gap-2">
+          <div className="flex-[2] flex flex-col gap-2">
             <button 
               onTouchStart={switchLane} 
-              className="h-12 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-base text-yellow-500 font-bold active:bg-yellow-500/30"
+              className="h-14 bg-black/80 border-2 border-yellow-500/60 rounded-xl text-base text-yellow-500 font-bold active:bg-yellow-500/30"
             >
               TROCAR FAIXA
             </button>
             <button 
               onTouchStart={() => handleKick()} 
-              className="h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
+              className="h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl text-lg font-bold text-black active:scale-95"
             >
-              CHUTE!
+              VOADORA!
             </button>
           </div>
+          <button 
+            onClick={() => setGameState({ isPaused: true })}
+            className="h-[116px] w-12 bg-red-600/80 border-2 border-red-400/60 rounded-xl text-white font-bold active:bg-red-500 flex items-center justify-center"
+          >
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          </button>
         </div>
         <p className="mt-2 text-white/50 text-xs text-center hidden sm:block">
           Setas = mover | ESPACO = voadora
