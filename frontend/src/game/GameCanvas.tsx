@@ -148,7 +148,7 @@ const CANVAS_WIDTH = Math.round(BASE_WIDTH * SCALE);
 const CANVAS_HEIGHT = Math.round(BASE_HEIGHT * SCALE);
 const LANE_LEFT_X = Math.round(145 * SCALE);
 const LANE_RIGHT_X = Math.round(255 * SCALE);
-const SPRITE_SIZE = Math.round(85 * SCALE);
+const SPRITE_SIZE = Math.round(110 * SCALE);
 const PHASE_DURATION_MS = 3 * 60 * 1000;
 
 const CITIES = [
